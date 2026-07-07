@@ -82,15 +82,39 @@
 
 ## Traceability
 
-| REQ-ID | Phase |
-|--------|-------|
-| DATA-01 to DATA-06 | Phase 1: Data Foundation |
-| INGEST-01 to INGEST-05 | Phase 2: Ingestion Layer |
-| SIGNAL-01 to SIGNAL-06 | Phase 3: Signal Engine |
-| SHADOW-01 to SHADOW-04 | Phase 3: Signal Engine |
-| REPORT-01 to REPORT-04 | Phase 4: Report + Approval Gate |
-| EXEC-01 to EXEC-05 | Phase 5: Alpaca Execution |
-| SCHED-01 to SCHED-03 | Phase 2 + Phase 5 |
-| RISK-01 | Phase 5: Alpaca Execution |
-
-*Traceability will be updated as phases are defined in ROADMAP.md*
+| REQ-ID | Phase | Status |
+|--------|-------|--------|
+| DATA-01 | Phase 1: Data Foundation | Pending |
+| DATA-02 | Phase 1: Data Foundation | Pending |
+| DATA-03 | Phase 1: Data Foundation | Pending |
+| DATA-04 | Phase 1: Data Foundation | Pending |
+| DATA-05 | Phase 1: Data Foundation | Pending |
+| DATA-06 | Phase 1: Data Foundation | Pending |
+| INGEST-01 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
+| INGEST-02 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
+| INGEST-05 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
+| SIGNAL-01 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SIGNAL-02 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SIGNAL-05 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SIGNAL-06 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SHADOW-01 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SHADOW-02 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SHADOW-03 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SHADOW-04 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SCHED-01 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| SCHED-02 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
+| REPORT-01 | Phase 4: Report + Approval Gate | Pending |
+| REPORT-02 | Phase 4: Report + Approval Gate | Pending |
+| REPORT-03 | Phase 4: Report + Approval Gate | Pending |
+| REPORT-04 | Phase 4: Report + Approval Gate | Pending |
+| EXEC-01 | Phase 4: Report + Approval Gate | Pending |
+| INGEST-03 | Phase 5: Congressional Signal + FRED Macro | Pending |
+| INGEST-04 | Phase 5: Congressional Signal + FRED Macro | Pending |
+| SIGNAL-03 | Phase 5: Congressional Signal + FRED Macro | Pending |
+| SIGNAL-04 | Phase 5: Congressional Signal + FRED Macro | Pending |
+| EXEC-02 | Phase 6: Alpaca Paper Execution | Pending |
+| EXEC-03 | Phase 6: Alpaca Paper Execution | Pending |
+| EXEC-04 | Phase 6: Alpaca Paper Execution | Pending |
+| EXEC-05 | Phase 6: Alpaca Paper Execution | Pending |
+| SCHED-03 | Phase 6: Alpaca Paper Execution | Pending |
+| RISK-01 | Phase 6: Alpaca Paper Execution | Pending |
