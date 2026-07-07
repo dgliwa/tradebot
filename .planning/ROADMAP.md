@@ -33,7 +33,7 @@ Decimal phases appear between their surrounding integers in numeric order.
   3. The `universe_snapshots` table records which tickers were in scope for a given run date, queryable by week
   4. All cross-layer dataclasses (`RawRecord`, `Recommendation`, `Order`, `Trade`) are importable and have typed fields with no dict passing at layer boundaries
   5. Re-running `init_db()` on an existing database produces no duplicate tables and no data loss (idempotent DDL)
-**Plans**: TBD
+**Plans**: 4 (01-PLAN.md — 3 waves, 18 tasks; checker: PASS)
 
 ### Phase 2: Ingestion Layer (Price + Insider)
 **Goal**: Price data (yfinance OHLCV) and insider data (EDGAR Form 4 code-P purchases) are fetched, validated, and stored immutably — and any zero-row or stale response blocks the pipeline
