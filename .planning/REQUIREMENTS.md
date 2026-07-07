@@ -4,12 +4,12 @@
 
 ### Data Foundation
 
-- [ ] **DATA-01**: System stores all raw and processed data in DuckDB with a schema that separates raw ingestion tables from scored signal tables from execution tables
-- [ ] **DATA-02**: Every raw data fetch records a `fetched_at` timestamp alongside the data; historical rows are never overwritten on re-fetch
-- [ ] **DATA-03**: Every fetcher returns a result that includes `row_count` and `freshness_date`; the pipeline blocks trade generation if either is invalid
-- [ ] **DATA-04**: All disclosures store both `transaction_date` (when the trade occurred) and `filed_at` (when the filing became public); signals use `filed_at` exclusively
-- [ ] **DATA-05**: The instrument schema supports stocks, calls, and puts from day one (`instrument_type`, `expiry`, `strike` fields — NULL for stocks)
-- [ ] **DATA-06**: A weekly `universe_snapshots` table records which tickers were in scope for each run, preventing survivorship bias in retrospective analysis
+- [x] **DATA-01**: System stores all raw and processed data in DuckDB with a schema that separates raw ingestion tables from scored signal tables from execution tables
+- [x] **DATA-02**: Every raw data fetch records a `fetched_at` timestamp alongside the data; historical rows are never overwritten on re-fetch
+- [x] **DATA-03**: Every fetcher returns a result that includes `row_count` and `freshness_date`; the pipeline blocks trade generation if either is invalid
+- [x] **DATA-04**: All disclosures store both `transaction_date` (when the trade occurred) and `filed_at` (when the filing became public); signals use `filed_at` exclusively
+- [x] **DATA-05**: The instrument schema supports stocks, calls, and puts from day one (`instrument_type`, `expiry`, `strike` fields — NULL for stocks)
+- [x] **DATA-06**: A weekly `universe_snapshots` table records which tickers were in scope for each run, preventing survivorship bias in retrospective analysis
 
 ### Data Ingestion
 
@@ -84,12 +84,12 @@
 
 | REQ-ID | Phase | Status |
 |--------|-------|--------|
-| DATA-01 | Phase 1: Data Foundation | Pending |
-| DATA-02 | Phase 1: Data Foundation | Pending |
-| DATA-03 | Phase 1: Data Foundation | Pending |
-| DATA-04 | Phase 1: Data Foundation | Pending |
-| DATA-05 | Phase 1: Data Foundation | Pending |
-| DATA-06 | Phase 1: Data Foundation | Pending |
+| DATA-01 | Phase 1: Data Foundation | Complete |
+| DATA-02 | Phase 1: Data Foundation | Complete |
+| DATA-03 | Phase 1: Data Foundation | Complete |
+| DATA-04 | Phase 1: Data Foundation | Complete |
+| DATA-05 | Phase 1: Data Foundation | Complete |
+| DATA-06 | Phase 1: Data Foundation | Complete |
 | INGEST-01 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
 | INGEST-02 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
 | INGEST-05 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
