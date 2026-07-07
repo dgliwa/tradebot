@@ -1,0 +1,4 @@
+-- Migration 001: Initial schema baseline.
+-- Base tables are created by init_db() via schema.py ALL_TABLES (IF NOT EXISTS).
+-- This file is a placeholder to establish the migration version history.
+-- Future migrations (002, 003, ...) add columns, indexes, or new tables here.
