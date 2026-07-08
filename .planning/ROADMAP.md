@@ -14,7 +14,7 @@ TradeBot is built in seven vertical slices, each delivering a runnable, verifiab
 Decimal phases appear between their surrounding integers in numeric order.
 
 - [x] **Phase 1: Data Foundation** - DuckDB schema, typed dataclasses, options-aware instrument table, idempotent DDL (completed 2026-07-07)
-- [ ] **Phase 2: Ingestion Layer (Price + Insider)** - yfinance OHLCV and EDGAR Form 4 fetchers with freshness validation
+- [x] **Phase 2: Ingestion Layer (Price + Insider)** - yfinance OHLCV and EDGAR Form 4 fetchers with freshness validation (completed 2026-07-08)
 - [ ] **Phase 3: Signal Engine + Shadow Pipeline** - Momentum + insider signals, composite scorer, shadow P&L tracker, weekly runner
 - [ ] **Phase 4: Report + Approval Gate** - Jinja2 HTML report with Plotly charts, CLI approval gate (timeout = skip)
 - [ ] **Phase 5: Congressional Signal + FRED Macro** - Quiver Quantitative congressional signal, FRED macro regime filter, updated composite weights
@@ -55,7 +55,9 @@ Decimal phases appear between their surrounding integers in numeric order.
   4. All fetchers pass their test suite using mocked HTTP responses (respx) with no live network calls required
   5. The EDGAR fetcher sends the required `User-Agent` header on every request
 
-**Plans**: TBD
+**Plans**: 1/1 plans complete
+
+- [ ] 02-PLAN.md
 
 ### Phase 3: Signal Engine + Shadow Pipeline
 
@@ -143,7 +145,7 @@ Phases execute in numeric order: 1 → 2 → 3 → 4 → 5 → 6 → 7
 | Phase | Plans Complete | Status | Completed |
 |-------|----------------|--------|-----------|
 | 1. Data Foundation | 1/1 | Complete   | 2026-07-07 |
-| 2. Ingestion Layer (Price + Insider) | 0/TBD | Not started | - |
+| 2. Ingestion Layer (Price + Insider) | 1/1 | Complete   | 2026-07-08 |
 | 3. Signal Engine + Shadow Pipeline | 0/TBD | Not started | - |
 | 4. Report + Approval Gate | 0/TBD | Not started | - |
 | 5. Congressional Signal + FRED Macro | 0/TBD | Not started | - |

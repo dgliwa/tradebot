@@ -13,11 +13,11 @@
 
 ### Data Ingestion
 
-- [ ] **INGEST-01**: System fetches daily OHLCV price data for universe tickers via yfinance and stores it immutably
-- [ ] **INGEST-02**: System fetches SEC EDGAR Form 4 filings via EFTS API, includes the required User-Agent header, filters to transaction code P (open-market purchase) only, and stores raw filings
+- [x] **INGEST-01**: System fetches daily OHLCV price data for universe tickers via yfinance and stores it immutably
+- [x] **INGEST-02**: System fetches SEC EDGAR Form 4 filings via EFTS API, includes the required User-Agent header, filters to transaction code P (open-market purchase) only, and stores raw filings
 - [ ] **INGEST-03**: System fetches Congressional trading disclosures via Quiver Quantitative free API (not raw Senate scraping) and stores raw disclosures
 - [ ] **INGEST-04**: System fetches FRED macro indicators (federal funds rate, yield curve) and stores with vintage date for look-ahead protection
-- [ ] **INGEST-05**: Each ingestion module is independently testable with mocked HTTP responses (respx); no live network calls in tests
+- [x] **INGEST-05**: Each ingestion module is independently testable with mocked HTTP responses (respx); no live network calls in tests
 
 ### Signal Engine
 
@@ -90,9 +90,9 @@
 | DATA-04 | Phase 1: Data Foundation | Complete |
 | DATA-05 | Phase 1: Data Foundation | Complete |
 | DATA-06 | Phase 1: Data Foundation | Complete |
-| INGEST-01 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
-| INGEST-02 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
-| INGEST-05 | Phase 2: Ingestion Layer (Price + Insider) | Pending |
+| INGEST-01 | Phase 2: Ingestion Layer (Price + Insider) | Complete |
+| INGEST-02 | Phase 2: Ingestion Layer (Price + Insider) | Complete |
+| INGEST-05 | Phase 2: Ingestion Layer (Price + Insider) | Complete |
 | SIGNAL-01 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
 | SIGNAL-02 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
 | SIGNAL-05 | Phase 3: Signal Engine + Shadow Pipeline | Pending |
