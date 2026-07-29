@@ -29,6 +29,12 @@ class Settings:
             "ALPACA_BASE_URL", "https://paper-api.alpaca.markets"
         )
     )
+    universe: list[str] = field(
+        default_factory=lambda: os.environ.get(
+            "TRADEBOT_UNIVERSE",
+            "AAPL,MSFT,NVDA,GOOGL,AMZN,META,TSLA,JPM,V,UNH,JNJ,XOM,WMT,PG,MA,HD,CVX,MRK,ABBV,PEP",
+        ).split(",")
+    )
 
     @property
     def is_live(self) -> bool:
