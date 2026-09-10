@@ -1,6 +1,6 @@
 # TradeBot
 
-A local-first weekly investing research pipeline. The current build initializes DuckDB and ingests validated daily prices and SEC Form 4 open-market purchases. Signal generation, reports, approvals, and Alpaca order execution are not implemented yet; no CLI command places trades.
+A local-first weekly investing research pipeline. The current build initializes DuckDB and ingests validated daily prices and SEC Form 4 open-market purchases. Signal generation, reports, approvals, and Alpaca order execution are not implemented yet; no CLI command places trades. See the staged [`docs/roadmap/`](docs/roadmap/README.md) for the path to a fake-money proof of concept.
 
 ## Setup
 
