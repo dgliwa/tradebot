@@ -8,6 +8,7 @@ dependencies = [
     "httpx>=0.28.1,<0.29",
     "tenacity>=9.1.0,<10",
     "yfinance>=1.5.1,<2",
+    "pandas-market-calendars>=5,<6",
 ]
 
 [project.scripts]

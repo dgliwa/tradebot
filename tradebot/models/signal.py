@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import date, datetime
+from datetime import UTC, date, datetime
 from typing import Optional
 
 
@@ -20,4 +20,4 @@ class Recommendation:
     insider_score: Optional[float] = None
     momentum_score: Optional[float] = None
     congressional_score: Optional[float] = None
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
