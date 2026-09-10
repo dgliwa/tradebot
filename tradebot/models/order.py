@@ -1,6 +1,6 @@
 from __future__ import annotations
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import UTC, datetime
 from typing import Literal, Optional
 
 
@@ -19,4 +19,4 @@ class Order:
     instrument_id: Optional[str] = None
     order_type: Literal["market", "limit"] = "market"
     status: str = "pending"
-    created_at: datetime = field(default_factory=datetime.utcnow)
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))

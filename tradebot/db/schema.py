@@ -1,8 +1,7 @@
-"""DDL constants for all TradeBot tables.
+"""Frozen v1 baseline. Do not edit table definitions to evolve the schema.
 
-All statements use CREATE TABLE IF NOT EXISTS for idempotent DDL (D-06).
-Execution order in ALL_TABLES matters: orders references instruments,
-trades references orders — foreign key tables must precede dependent tables.
+New and existing databases receive changes through numbered SQL migrations.
+Foreign-key parents precede dependent tables in ALL_TABLES.
 """
 from __future__ import annotations
 

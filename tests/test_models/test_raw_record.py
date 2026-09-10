@@ -1,20 +1,24 @@
-"""FetchResult validity tests — DATA-03."""
-from datetime import date
-from tradebot.models.raw_record import FetchResult
+from datetime import UTC, date, datetime
+
+from tradebot.models.raw_record import FetchResult, TickerFetchResult
 
 
-def test_fetch_result_validity():
-    today = date.today()
-    assert FetchResult("yfinance", "AAPL", 100, today).is_valid is True
-    assert FetchResult("yfinance", "AAPL", 0, today).is_valid is False
-    assert FetchResult("yfinance", "AAPL", 100, None).is_valid is False
-    assert FetchResult("yfinance", "AAPL", 0, None).is_valid is False
+def test_successful_empty_disclosure_window_is_valid():
+    result = FetchResult('edgar', datetime.now(UTC), [TickerFetchResult('AAPL', 0, date(2026, 7, 8))])
+    assert result.is_valid
+    assert result.row_count == 0
 
 
-def test_fetch_result_fields():
-    today = date.today()
-    result = FetchResult("edgar", "MSFT", 5, today)
-    assert result.source == "edgar"
-    assert result.ticker == "MSFT"
-    assert result.row_count == 5
-    assert result.freshness_date == today
+def test_partial_failure_invalidates_aggregate():
+    result = FetchResult('yfinance', datetime.now(UTC), [
+        TickerFetchResult('AAPL', 60, date(2026, 7, 7)),
+        TickerFetchResult('MSFT', errors=['missing data']),
+    ])
+    assert not result.is_valid
+    assert result.freshness_date is None
+    assert result.row_count == 60
+
+
+def test_empty_universe_and_source_error_invalid():
+    assert not FetchResult('edgar', datetime.now(UTC)).is_valid
+    assert not FetchResult('edgar', datetime.now(UTC), [TickerFetchResult('AAPL', 0, date.today())], ['network']).is_valid

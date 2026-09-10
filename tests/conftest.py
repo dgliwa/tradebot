@@ -1,19 +1,17 @@
-import pytest
 import duckdb
-from tradebot.db import schema
+import pytest
+
+from tradebot.db import init_db
 
 
-@pytest.fixture()
-def db(monkeypatch):
-    """In-memory DuckDB connection with all tables created.
-
-    Monkeypatches tradebot.db.connection._connection so that any code
-    calling get_connection() (including init_db()) receives this
-    in-memory connection instead of opening the file-backed DB.
-    """
-    conn = duckdb.connect(database=":memory:")
-    for ddl in schema.ALL_TABLES:
-        conn.execute(ddl)
-    monkeypatch.setattr("tradebot.db.connection._connection", conn)
+@pytest.fixture
+def empty_db():
+    conn = duckdb.connect(":memory:")
     yield conn
     conn.close()
+
+
+@pytest.fixture
+def db(empty_db):
+    init_db(empty_db)
+    return empty_db

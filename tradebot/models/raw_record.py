@@ -1,36 +1,51 @@
 from __future__ import annotations
-from dataclasses import dataclass
+
+from dataclasses import dataclass, field
 from datetime import date, datetime
-from typing import Any, Optional
+from typing import Any
 
 
 @dataclass
 class RawRecord:
-    """A single raw row from any data source before normalization.
-
-    Carries both the raw payload (data dict) and parsed metadata fields
-    so callers can inspect key dates without unpacking the dict.
-    """
     source: str
     ticker: str
     fetched_at: datetime
     data: dict[str, Any]
-    transaction_date: Optional[date] = None
-    filed_at: Optional[date] = None
+    transaction_date: date | None = None
+    filed_at: date | None = None
+
+
+@dataclass
+class TickerFetchResult:
+    ticker: str
+    row_count: int = 0
+    # Prices: latest completed bar. Disclosures: date through which filings were scanned.
+    freshness_date: date | None = None
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def is_valid(self) -> bool:
+        return self.row_count >= 0 and self.freshness_date is not None and not self.errors
 
 
 @dataclass
 class FetchResult:
-    """Summary of a fetch operation returned to the pipeline.
-
-    is_valid gates downstream signal computation:
-    a zero-row or dateless result blocks trade generation.
-    """
+    """Fetch health is coverage-based, not a count of matching insider purchases."""
     source: str
-    ticker: str
-    row_count: int
-    freshness_date: Optional[date]
+    checked_at: datetime
+    tickers: list[TickerFetchResult] = field(default_factory=list)
+    errors: list[str] = field(default_factory=list)
+
+    @property
+    def row_count(self) -> int:
+        return sum(t.row_count for t in self.tickers)
+
+    @property
+    def freshness_date(self) -> date | None:
+        if not self.is_valid:
+            return None
+        return min(t.freshness_date for t in self.tickers)
 
     @property
     def is_valid(self) -> bool:
-        return self.row_count > 0 and self.freshness_date is not None
+        return bool(self.tickers) and not self.errors and all(t.is_valid for t in self.tickers)
