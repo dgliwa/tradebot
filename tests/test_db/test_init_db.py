@@ -10,7 +10,7 @@ def test_init_db_from_empty_database(empty_db):
     init_db(empty_db)
     names = {r[0] for r in empty_db.execute("SHOW TABLES").fetchall()}
     assert {"raw_prices", "legacy_raw_prices", "price_snapshots", "latest_prices", "raw_insider", "orders", "trades"} <= names
-    assert empty_db.execute("SELECT version FROM schema_versions ORDER BY version").fetchall() == [(1,), (2,)]
+    assert empty_db.execute("SELECT version FROM schema_versions ORDER BY version").fetchall() == [(1,), (2,), (3,)]
 
 
 def test_upgrade_preserves_legacy_data(empty_db):
@@ -24,6 +24,8 @@ def test_upgrade_preserves_legacy_data(empty_db):
     assert empty_db.execute("SELECT close FROM legacy_raw_prices").fetchone() == (2,)
     assert empty_db.execute("SELECT id, raw_xml FROM raw_insider").fetchone() == ('a:0', None)
     assert empty_db.execute("SELECT count(*) FROM latest_prices").fetchone() == (0,)
+    insider_type = {row[0]: row[1] for row in empty_db.execute("DESCRIBE raw_insider").fetchall()}
+    assert insider_type["fetched_at"] == "TIMESTAMP WITH TIME ZONE"
 
 
 def test_failed_migration_rolls_back_schema_and_version(empty_db, tmp_path):

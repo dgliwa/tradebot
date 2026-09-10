@@ -2,7 +2,7 @@
 
 ## What This Is
 
-A Python-based algorithmic trading system that uses publicly available data to generate a profitable, semi-automated trading strategy targeting alpha over the S&P 500. The system runs in "shadow mode" (paper trading via Alpaca) indefinitely until the user gains confidence in the signals, then can switch to real-money execution with a manual confirmation gate.
+A Python-based algorithmic trading system that uses publicly available data to generate a semi-automated strategy targeting alpha over the S&P 500. It first forward-tests hypothetical next-open positions in a local shadow portfolio, then separately graduates to Alpaca paper trading, and only later to real-money execution with a manual confirmation gate.
 
 **Core value:** A weekly signal report that tells the user exactly what to buy, why, and how much — with one-click paper or real execution via Alpaca API.
 
@@ -20,7 +20,7 @@ Three layered signals, all sourced from free public APIs:
 
 | Signal | Source | Latency | Edge |
 |--------|--------|---------|------|
-| Congressional disclosures | house.gov / senate.gov EFTS | ~45 days | Political insider knowledge |
+| Congressional disclosures | Quiver Quantitative free API | ~45 days | Political insider knowledge |
 | Corporate insider buys (Form 4) | SEC EDGAR | 2 days | Executive skin-in-the-game |
 | Macro regime filter | FRED (Federal Reserve) | Daily | Don't buy growth in rate-hike cycles |
 
@@ -28,11 +28,11 @@ Price data: yfinance (free). Momentum as secondary filter on top of disclosure s
 
 ## Architecture Vision
 
-- **Data ingestion layer:** Scrapers/pollers for Congressional disclosures, SEC EDGAR Form 4, FRED macro indicators, yfinance prices
+- **Data ingestion layer:** API clients/pollers for Quiver congressional disclosures, SEC EDGAR Form 4, FRED macro indicators, and yfinance prices
 - **Signal engine:** Score and rank tickers based on combined signals
 - **Report generator:** Weekly markdown/HTML report with ranked trade recommendations
 - **Execution layer:** Alpaca SDK with paper/live toggle — options-aware architecture from day one, stocks-only execution initially
-- **Shadow mode:** Alpaca paper trading account; P&L tracked and compared to SPY benchmark
+- **Shadow mode:** Local hypothetical next-open positions; P&L tracked and compared to a same-date SPY benchmark before Alpaca paper trading begins
 
 ## Key Decisions
 
@@ -44,7 +44,7 @@ Price data: yfinance (free). Momentum as secondary filter on top of disclosure s
 | Multi-signal blend | Political signal alone is lagged; diversified signals reduce timing risk | Confirmed |
 | Report + manual confirm | Avoids runaway automation bugs; user stays in control | Confirmed |
 | Options-aware architecture | Design for options (calls/puts) from day one, even if stocks-only at first | Confirmed |
-| Shadow mode until confident | No fixed timeline — go live when signals prove themselves | Confirmed |
+| Staged promotion | Local shadow → 8+ weeks Alpaca paper → live only after defined return, drawdown, and gate checks | Confirmed |
 
 ## Requirements
 
@@ -54,14 +54,14 @@ Price data: yfinance (free). Momentum as secondary filter on top of disclosure s
 
 ### Active
 
-- [ ] Ingest Congressional trading disclosures from house.gov and senate.gov EFTS APIs
+- [ ] Ingest Congressional trading disclosures from the Quiver Quantitative free API
 - [ ] Ingest SEC EDGAR Form 4 insider buy filings
 - [ ] Ingest FRED macro indicators (interest rates, regime classification)
 - [ ] Fetch price and momentum data via yfinance
 - [ ] Score and rank tickers using combined multi-signal model
 - [ ] Generate weekly trade recommendation report (markdown/HTML)
 - [ ] Integrate with Alpaca API for paper and live order execution
-- [ ] Shadow mode: track paper P&L and compare to SPY benchmark
+- [ ] Shadow mode: track hypothetical next-open P&L and compare to a same-date SPY benchmark
 - [ ] Manual confirmation gate before any order executes
 - [ ] Options-aware data model (support calls/puts in instrument schema)
 - [ ] Simple CLI or web dashboard to view report and approve trades
