@@ -1,98 +1,77 @@
-from __future__ import annotations
-from datetime import date, datetime
+from datetime import UTC, datetime
 
-import numpy as np
 import pandas as pd
 import pytest
 
+from tradebot.fetchers.market import completed_sessions
 from tradebot.fetchers.price import fetch_prices
 
-
-def _make_mock_df(tickers: list[str], num_rows: int = 3) -> pd.DataFrame:
-    """Create a MultiIndex DataFrame matching yfinance group_by='ticker' output."""
-    dates = pd.date_range("2026-04-01", periods=num_rows, freq="B")
-    columns = pd.MultiIndex.from_product(
-        [tickers, ["Open", "High", "Low", "Close", "Volume"]],
-        names=["Ticker", "Price"],
-    )
-    data = {
-        (ticker, col): (
-            [float(100 + i) for i in range(num_rows)]
-            if col != "Volume"
-            else [1_000_000 + i * 100 for i in range(num_rows)]
-        )
-        for ticker in tickers
-        for col in ["Open", "High", "Low", "Close", "Volume"]
-    }
-    return pd.DataFrame(data, index=dates, columns=columns)
+NOW = datetime(2026, 7, 8, 22, tzinfo=UTC)
 
 
-def test_fetch_prices_happy_path(monkeypatch):
-    mock_df = _make_mock_df(["AAPL", "MSFT"], num_rows=3)
-    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **kw: mock_df)
-
-    records, result = fetch_prices(["AAPL", "MSFT"])
-
-    assert len(records) == 6  # 3 rows x 2 tickers
-    assert result.source == "yfinance"
-    assert result.ticker == "universe"
-    assert result.row_count == 6
-    assert result.is_valid is True
-
-    aapl_records = [r for r in records if r.ticker == "AAPL"]
-    assert len(aapl_records) == 3
-    assert all(r.source == "yfinance" for r in aapl_records)
-    assert all(r.filed_at is None for r in aapl_records)
-    assert all(isinstance(r.transaction_date, date) for r in aapl_records)
-    assert all("open" in r.data for r in aapl_records)
-    assert all("high" in r.data for r in aapl_records)
-    assert all("low" in r.data for r in aapl_records)
-    assert all("close" in r.data for r in aapl_records)
-    assert all("volume" in r.data for r in aapl_records)
-    assert all(isinstance(r.data["volume"], int) for r in aapl_records)
+def frame(tickers, *, sessions=None):
+    sessions = sessions or completed_sessions(NOW)[-50:]
+    columns = pd.MultiIndex.from_product([tickers, ["Open", "High", "Low", "Close", "Volume"]], names=["Ticker", "Price"])
+    values = {(ticker, field): [1_000_000 + i if field == "Volume" else 100. + i for i in range(len(sessions))]
+              for ticker in tickers for field in ("Open", "High", "Low", "Close", "Volume")}
+    return pd.DataFrame(values, index=pd.to_datetime(sessions), columns=columns)
 
 
-def test_fetch_prices_empty_response(monkeypatch):
-    empty_df = pd.DataFrame(
-        columns=pd.MultiIndex.from_tuples([], names=["Ticker", "Price"])
-    )
-    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **kw: empty_df)
+def test_complete_histories_are_valid(monkeypatch):
+    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL", "MSFT"]))
+    records, result = fetch_prices([" aapl ", "MSFT"], now=NOW)
+    assert result.is_valid
+    assert result.row_count == 100
+    assert result.freshness_date == completed_sessions(NOW)[-1]
+    assert all(record.fetched_at == NOW for record in records)
+    assert all(type(record.data["volume"]) is int for record in records)
 
-    records, result = fetch_prices(["FAKE_TICKER"])
 
+def test_missing_ticker_is_explicit_partial_failure(monkeypatch):
+    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL"]))
+    records, result = fetch_prices(["AAPL", "MSFT"], now=NOW)
+    assert len(records) == 50
+    assert not result.is_valid
+    assert result.tickers[1].ticker == "MSFT"
+    assert "No ticker data" in result.tickers[1].errors[0]
+
+
+def test_stale_or_short_history_is_invalid(monkeypatch):
+    sessions = completed_sessions(NOW)[-49:]
+    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL"], sessions=sessions))
+    records, result = fetch_prices(["AAPL"], now=NOW)
     assert records == []
-    assert result.row_count == 0
-    assert result.freshness_date is None
-    assert result.is_valid is False
+    assert not result.is_valid
+    assert "Missing 1 required sessions" in result.tickers[0].errors[0]
 
 
-def test_fetch_prices_freshness_date(monkeypatch):
-    mock_df = _make_mock_df(["AAPL"], num_rows=5)
-    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **kw: mock_df)
+@pytest.mark.parametrize("field,value", [("Close", float("nan")), ("Low", 200.), ("Volume", 1.5)])
+def test_bad_values_reject_entire_ticker(monkeypatch, field, value):
+    data = frame(["AAPL"])
+    if field == "Volume":
+        data[("AAPL", field)] = data[("AAPL", field)].astype(float)
+    data.loc[data.index[-1], ("AAPL", field)] = value
+    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: data)
+    records, result = fetch_prices(["AAPL"], now=NOW)
+    assert records == []
+    assert not result.is_valid
 
-    records, result = fetch_prices(["AAPL"])
 
-    expected_freshness = max(r.transaction_date for r in records)
-    assert result.freshness_date == expected_freshness
+def test_in_progress_daily_bar_is_excluded(monkeypatch):
+    before_close = datetime(2026, 7, 8, 18, tzinfo=UTC)
+    completed = completed_sessions(before_close)
+    sessions = completed[-50:] + [before_close.date()]
+    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL"], sessions=sessions))
+    records, result = fetch_prices(["AAPL"], now=before_close)
+    assert result.is_valid
+    assert all(record.transaction_date != before_close.date() for record in records)
 
 
-def test_fetch_prices_yfinance_exception(monkeypatch):
-    def broken_download(**kw):
+def test_download_error_has_source_diagnostic(monkeypatch):
+    def fail(**_):
         raise ConnectionError("Yahoo blocked")
-
-    monkeypatch.setattr("tradebot.fetchers.price.yf.download", broken_download)
-
-    records, result = fetch_prices(["AAPL"])
-
+    monkeypatch.setattr("tradebot.fetchers.price.yf.download", fail)
+    records, result = fetch_prices(["AAPL"], now=NOW)
     assert records == []
-    assert result.is_valid is False
-
-
-def test_fetch_prices_fetched_at_is_datetime(monkeypatch):
-    mock_df = _make_mock_df(["NVDA"], num_rows=1)
-    monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **kw: mock_df)
-
-    records, _ = fetch_prices(["NVDA"])
-
-    assert len(records) == 1
-    assert isinstance(records[0].fetched_at, datetime)
+    assert not result.is_valid
+    assert "Yahoo blocked" in result.errors[0]
