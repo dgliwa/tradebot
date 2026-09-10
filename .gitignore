@@ -17,6 +17,11 @@ dist/
 build/
 .venv/
 
+# Local agent/planning state
+.claude/
+.pi/
+.planning/
+
 # IDE
 .vscode/
 .idea/
