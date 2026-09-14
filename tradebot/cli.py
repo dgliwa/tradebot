@@ -12,10 +12,15 @@ import duckdb
 from tradebot.config import load_settings
 from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
+from tradebot.execution.broker import AlpacaPaperBroker
+from tradebot.execution.paper import (
+    approve_intent, enable_automatic_submission, ensure_paper_state, pending_intents,
+    reconcile_orders, reject_intent, set_kill_switch,
+)
 from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
 from tradebot.report import generate_report
 from tradebot.service import run_loop, run_once, service_status
-from tradebot.shadow.account import create_account
+from tradebot.shadow.account import create_account, load_account
 from tradebot.shadow.service import run_shadow_cycle, shadow_status
 from tradebot.strategy import load_strategy
 from tradebot.strategy.daily import effective_session, run_daily
@@ -39,6 +44,10 @@ def parser() -> argparse.ArgumentParser:
     shadow.add_argument("action", choices=("init", "status"))
     shadow.add_argument("--account", default="default")
     shadow.add_argument("--session", type=date.fromisoformat)
+    paper = commands.add_parser("paper", help="manage guarded Alpaca paper-order intents")
+    paper.add_argument("action", choices=("status", "pending", "approve", "reject", "reconcile", "kill", "unkill", "auto-enable"))
+    paper.add_argument("intent_id", nargs="?")
+    paper.add_argument("--account", default="default")
     service = commands.add_parser("service", help="run or inspect the platform-neutral scheduler")
     service.add_argument("action", choices=("run-once", "run", "status", "health"))
     service.add_argument("--poll-seconds", type=int, default=60)
@@ -74,6 +83,40 @@ def run(argv: list[str] | None = None) -> int:
                 return 0
             if args.command == "recommendations":
                 print(json.dumps(recommendation_rows(conn, args.run_id), sort_keys=True))
+                return 0
+            if args.command == "paper":
+                state = ensure_paper_state(conn)
+                if args.action == "status":
+                    print(json.dumps(state, sort_keys=True))
+                    return 0
+                if args.action in {"kill", "unkill"}:
+                    set_kill_switch(conn, args.action == "kill")
+                    print(json.dumps(ensure_paper_state(conn), sort_keys=True))
+                    return 0
+                if args.action == "auto-enable":
+                    enable_automatic_submission(conn)
+                    print(json.dumps(ensure_paper_state(conn), sort_keys=True))
+                    return 0
+                account = load_account(conn, args.account)
+                if args.action == "pending":
+                    print(json.dumps([asdict(item) for item in pending_intents(conn, account)], sort_keys=True))
+                    return 0
+                if args.action == "reject":
+                    if not args.intent_id:
+                        raise ValueError("paper reject requires an intent_id")
+                    reject_intent(conn, account, args.intent_id)
+                    print(json.dumps({"status": "rejected", "intent_id": args.intent_id}))
+                    return 0
+                broker = AlpacaPaperBroker(settings)
+                if args.action == "reconcile":
+                    print(json.dumps({"reconciled": reconcile_orders(conn, account, broker)}))
+                    return 0
+                if not args.intent_id:
+                    raise ValueError("paper approve requires an intent_id")
+                strategy = load_strategy(args.strategy)
+                print(json.dumps(asdict(approve_intent(
+                    conn, account, strategy, args.intent_id, broker
+                )), sort_keys=True))
                 return 0
             if args.command == "service":
                 if args.action in {"status", "health"}:

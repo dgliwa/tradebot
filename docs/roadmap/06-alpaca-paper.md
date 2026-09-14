@@ -15,10 +15,11 @@ Mirror approved recommendations into Alpaca's fake-money environment while treat
 7. Print PAPER prominently and hard-block any live endpoint in this stage.
 8. Implement and separately verify paper stop orders.
 9. Add commands:
-   - `tradebot approvals list`
-   - `tradebot approve <run-id>`
-   - `tradebot paper execute <run-id>`
+   - `tradebot paper pending`
+   - `tradebot paper approve <intent-id>`
+   - `tradebot paper reject <intent-id>`
    - `tradebot paper reconcile`
+   - `tradebot paper kill`
 10. Document differences between local assumptions, Alpaca paper fills, and real markets.
 
 ## Tests
@@ -44,4 +45,4 @@ Approved paper orders execute, reconcile, and report correctly across normal fil
 
 ## Not included
 
-Live endpoints, unattended approval, options, margin, or short selling.
+Live endpoints, options, margin, or short selling. Unattended paper submission remains locked until ten fills reconcile and an operator explicitly enables it.

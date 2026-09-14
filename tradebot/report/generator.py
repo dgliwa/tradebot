@@ -118,6 +118,10 @@ def generate_report(
            FROM shadow_fills f JOIN shadow_orders o ON o.id=f.order_id
            WHERE o.account_id=? ORDER BY f.filled_at,f.id""", [account.id]
     ).fetchall()
+    paper_intents = conn.execute(
+        """SELECT i.id,i.client_order_id,i.status,i.broker_order_id,i.reconciled_at,i.diagnostics
+           FROM broker_order_intents i WHERE i.account_id=? ORDER BY i.id""", [account.id]
+    ).fetchall()
     coverage = conn.execute(
         """SELECT source,ticker,checked_through,checked_at,status,errors FROM (
              SELECT *,row_number() OVER (PARTITION BY source,ticker ORDER BY checked_at DESC) rank
@@ -136,6 +140,12 @@ def generate_report(
             "ticker": row[0], "side": row[1], "quantity": row[2], "price": row[3],
             "commission": row[4], "filled_at": row[5].isoformat(), "reason": row[6],
         } for row in fills],
+        "paper_order_intents": [{
+            "id": row[0], "client_order_id": row[1], "status": row[2],
+            "broker_order_id": row[3],
+            "reconciled_at": row[4].isoformat() if row[4] else None,
+            "diagnostics": json.loads(row[5]),
+        } for row in paper_intents],
         "data_quality": [{
             "source": row[0], "ticker": row[1],
             "checked_through": row[2].isoformat() if row[2] else None,

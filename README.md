@@ -65,6 +65,19 @@ uv run tradebot report generate
 
 Shadow orders become eligible at the next market open and include configured unfavorable slippage. Cash, contributions, orders, fills, positions, stops, cooldowns, dividends, and splits are persisted idempotently in DuckDB. The shadow path cannot submit broker orders.
 
+## Alpaca paper orders
+
+After adding paper API credentials to `.env.paper`, inspect and explicitly approve each intent mirrored from the local $10,000 strategy allocation:
+
+```bash
+uv run tradebot paper pending
+uv run tradebot paper approve INTENT_ID
+uv run tradebot paper reconcile
+uv run tradebot paper status
+```
+
+The adapter is hard-locked to Alpaca's paper endpoint, uses deterministic client order IDs, ignores the paper account's excess buying power, and submits the exact local shadow quantity. `tradebot paper kill` blocks submissions immediately. Automatic submission cannot be enabled until ten fills reconcile successfully; it then requires the explicit `tradebot paper auto-enable` command. No Alpaca credentials are required for ingestion, recommendations, reports, or local shadow trading. See [`docs/alpaca-paper.md`](docs/alpaca-paper.md) for safety invariants and the credentialed sandbox checklist.
+
 ## Unattended operation
 
 Run one cycle manually or keep the platform-neutral foreground service under your preferred supervisor:

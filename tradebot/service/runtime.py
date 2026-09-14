@@ -11,7 +11,10 @@ from typing import Callable
 import duckdb
 
 from tradebot.config import Settings
+from tradebot.execution.broker import AlpacaPaperBroker
+from tradebot.execution.paper import ensure_paper_state, reconcile_orders, submit_automatic_intents
 from tradebot.report import generate_report
+from tradebot.shadow.account import load_account
 from tradebot.shadow.service import run_shadow_cycle
 from tradebot.strategy.base import TradingStrategy
 from tradebot.strategy.daily import effective_session
@@ -78,6 +81,12 @@ def run_once(
     )
     try:
         cycle = run_shadow_cycle(conn, settings, strategy, decision_at=started_at)
+        paper_state = ensure_paper_state(conn, started_at)
+        if paper_state["auto_enabled"] and not paper_state["kill_switch"]:
+            account = load_account(conn)
+            broker = AlpacaPaperBroker(settings)
+            reconcile_orders(conn, account, broker, started_at)
+            submit_automatic_intents(conn, account, strategy, broker)
         report_paths = generate_report(
             conn, strategy, cycle.daily.session, output_root=output_root
         )
