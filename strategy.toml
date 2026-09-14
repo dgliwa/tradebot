@@ -1,0 +1,45 @@
+version = "0.1.0"
+name = "pelosi-led-long-equity"
+benchmark = "SPY"
+
+[schedule]
+timezone = "America/New_York"
+hour = 18
+minute = 0
+
+[capital]
+starting_cash = 10000.0
+weekly_contribution = 250.0
+contribution_weekday = 0
+position_fraction = 0.03
+max_positions = 10
+max_new_positions = 3
+
+[universe]
+tracked_politicians = ["Nancy Pelosi"]
+lookback_days = 180
+rank_improvement_threshold = 2
+
+[signals]
+momentum_21_weight = 0.4
+momentum_63_weight = 0.6
+insider_weight = 0.5714285714285714
+momentum_weight = 0.4285714285714286
+
+[risk]
+stop_loss_fraction = 0.08
+max_holding_days = 84
+negative_score_runs = 2
+stop_reentry_days = 28
+
+[execution]
+slippage_bps = 10
+commission = 0.0
+allow_fractional = true
+allow_margin = false
+allow_short = false
+
+[paper]
+auto_submit_after_reconciled_orders = 10
+max_order_fraction = 0.03
+max_daily_new_positions = 3

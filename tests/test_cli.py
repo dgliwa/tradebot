@@ -32,6 +32,13 @@ def valid_result():
     return FetchResult("yfinance", NOW, [TickerFetchResult("AAPL", 1, date(2026, 7, 8))])
 
 
+def test_strategy_show_does_not_require_environment(capsys):
+    assert run(["strategy", "show"]) == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["config"]["version"] == "0.1.0"
+    assert len(payload["config_hash"]) == 64
+
+
 def test_init_db_cli_is_idempotent(clean_env, capsys):
     env_dir, db_path = clean_env
     assert run(["--env-dir", str(env_dir), "init-db"]) == 0

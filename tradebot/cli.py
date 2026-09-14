@@ -12,13 +12,17 @@ from tradebot.config import load_settings
 from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
 from tradebot.ingestion import ingest_insider, ingest_prices
+from tradebot.strategy import load_strategy
 
 
 def parser() -> argparse.ArgumentParser:
     root = argparse.ArgumentParser(prog="tradebot", description="Local TradeBot data pipeline (no order execution)")
     root.add_argument("--env-dir", type=Path, default=Path("."), help="directory containing .env.paper/.env.live")
+    root.add_argument("--strategy", type=Path, default=Path("strategy.toml"), help="versioned strategy TOML file")
     commands = root.add_subparsers(dest="command", required=True)
     commands.add_parser("init-db", help="initialize or upgrade the selected database")
+    strategy = commands.add_parser("strategy", help="inspect the effective strategy contract")
+    strategy.add_argument("action", choices=("show",))
     ingest = commands.add_parser("ingest", help="fetch and atomically persist raw market data")
     ingest.add_argument("source", choices=("prices", "insider", "all"))
     return root
@@ -27,6 +31,10 @@ def parser() -> argparse.ArgumentParser:
 def run(argv: list[str] | None = None) -> int:
     args = parser().parse_args(argv)
     try:
+        if args.command == "strategy":
+            strategy = load_strategy(args.strategy)
+            print(json.dumps({"config": json.loads(strategy.canonical_json), "config_hash": strategy.config_hash}, sort_keys=True))
+            return 0
         settings = load_settings(env_dir=args.env_dir)
         with open_database(settings.db_path) as conn:
             init_db(conn)
