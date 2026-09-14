@@ -18,5 +18,6 @@ def test_disclosure_dates_separate(db):
 
 
 def test_universe_snapshots_queryable(db):
-    db.execute("INSERT INTO universe_snapshots VALUES (1,'2026-07-06','2026-07-06','AAPL',now())")
+    db.execute("""INSERT INTO universe_snapshots (id,run_date,week_start,ticker,created_at)
+                  VALUES (1,'2026-07-06','2026-07-06','AAPL',now())""")
     assert db.execute("SELECT ticker FROM universe_snapshots WHERE week_start='2026-07-06'").fetchall() == [('AAPL',)]

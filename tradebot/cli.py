@@ -4,6 +4,7 @@ import argparse
 import json
 import sys
 from dataclasses import asdict
+from datetime import date
 from pathlib import Path
 
 import duckdb
@@ -11,7 +12,7 @@ import duckdb
 from tradebot.config import load_settings
 from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
-from tradebot.ingestion import ingest_insider, ingest_prices
+from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
 from tradebot.strategy import load_strategy
 
 
@@ -24,7 +25,9 @@ def parser() -> argparse.ArgumentParser:
     strategy = commands.add_parser("strategy", help="inspect the effective strategy contract")
     strategy.add_argument("action", choices=("show",))
     ingest = commands.add_parser("ingest", help="fetch and atomically persist raw market data")
-    ingest.add_argument("source", choices=("prices", "insider", "all"))
+    ingest.add_argument("source", choices=("prices", "insider", "congressional", "all"))
+    ingest.add_argument("--file", type=Path, help="manual congressional disclosure CSV")
+    ingest.add_argument("--coverage-through", type=date.fromisoformat, help="latest filing date checked (YYYY-MM-DD)")
     return root
 
 
@@ -43,6 +46,10 @@ def run(argv: list[str] | None = None) -> int:
                 print(json.dumps({"status": "ok", "mode": settings.mode, "database": str(settings.db_path)}))
                 return 0
             operations = []
+            if args.source == "congressional":
+                if args.file is None or args.coverage_through is None:
+                    raise ValueError("Congressional import requires --file and --coverage-through")
+                operations.append(ingest_political_csv(conn, args.file, args.coverage_through))
             if args.source in {"prices", "all"}:
                 operations.append(ingest_prices(conn, settings))
             if args.source in {"insider", "all"}:

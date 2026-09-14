@@ -73,6 +73,20 @@ def test_invalid_fetch_exits_nonzero_without_partial_write(clean_env, monkeypatc
         assert conn.execute("SELECT count(*) FROM raw_prices").fetchone() == (0,)
 
 
+def test_congressional_csv_import(clean_env, tmp_path, capsys):
+    env_dir, db_path = clean_env
+    csv_path = tmp_path / "political.csv"
+    csv_path.write_text(
+        "source_id,politician,owner,ticker,transaction_type,asset_type,option_type,transaction_date,filed_at,amount_min,amount_max\n"
+        "p1,Nancy Pelosi,Spouse,NVDA,purchase,option,call,2026-07-01,2026-07-07,100001,250000\n"
+    )
+    assert run(["--env-dir", str(env_dir), "ingest", "congressional", "--file", str(csv_path),
+                "--coverage-through", "2026-07-08"]) == 0
+    assert json.loads(capsys.readouterr().out)[0]["inserted"] == 1
+    with duckdb.connect(str(db_path)) as conn:
+        assert conn.execute("SELECT ticker FROM raw_congressional").fetchone() == ("NVDA",)
+
+
 def test_bad_configuration_exits_nonzero(clean_env, monkeypatch, capsys):
     env_dir, _ = clean_env
     monkeypatch.setenv("TRADEBOT_MODE", "danger")
