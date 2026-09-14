@@ -15,6 +15,8 @@ Run a reproducible weekly strategy with fake money over time, first through a de
 
 No signal, simulated portfolio, report, scheduler, approval, or broker integration exists yet.
 
+Approved PoC defaults are frozen in [`DECISIONS.md`](DECISIONS.md).
+
 ## Delivery sequence
 
 | Step | Deliverable | Main exit condition |
@@ -23,7 +25,7 @@ No signal, simulated portfolio, report, scheduler, approval, or broker integrati
 | [2](02-weekly-signals.md) | Weekly signals and rankings | Dry run creates reproducible, explainable recommendations |
 | [3](03-shadow-portfolio.md) | Local fake-money brokerage | Orders fill at later market opens and accounting reconciles |
 | [4](04-performance-reporting.md) | Audit and performance report | Every result can be traced to inputs, decisions, and fills |
-| [5](05-automation.md) | Idempotent scheduled operation | Four unattended weekly cycles complete without duplicate work |
+| [5](05-automation.md) | Idempotent scheduled operation | Daily evaluations run under a platform-neutral service without duplicate work |
 | [6](06-alpaca-paper.md) | Alpaca paper execution | Approved paper orders and broker reconciliation work reliably |
 | [7](07-forward-evaluation.md) | Forward-test evaluation | Frozen strategy accumulates enough evidence for a go/no-go review |
 

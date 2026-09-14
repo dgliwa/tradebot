@@ -2,11 +2,11 @@
 
 ## Objective
 
-Run the complete local shadow workflow on schedule without duplicate activity or silent failure.
+Run the complete local shadow workflow after every completed trading session without duplicate activity or silent failure.
 
 ## Work
 
-1. Define a single weekly orchestration service:
+1. Define a single daily orchestration service:
    - Determine the effective market session
    - Ingest required sources
    - Validate coverage
@@ -15,7 +15,7 @@ Run the complete local shadow workflow on schedule without duplicate activity or
    - Generate or settle shadow orders at the appropriate time
    - Update marks and benchmark
    - Generate report
-2. Add a market-calendar-aware scheduler in one documented deployment environment.
+2. Add a market-calendar-aware foreground scheduler that can run under any host process supervisor.
 3. Add a run lock and deterministic run key to prevent overlap and duplicates.
 4. Persist structured stage status, duration, diagnostics, and retryability.
 5. Retry transient source failures without retrying validation failures.
@@ -34,14 +34,14 @@ Run the complete local shadow workflow on schedule without duplicate activity or
 
 ## Suggested commits
 
-1. `feat: orchestrate the weekly shadow pipeline`
-2. `feat: make weekly runs resumable and idempotent`
+1. `feat: orchestrate the daily shadow pipeline`
+2. `feat: make daily runs resumable and idempotent`
 3. `feat: schedule market-calendar-aware runs`
 4. `docs: add shadow operations runbook`
 
 ## Exit criteria
 
-Four weekly local-shadow cycles complete unattended with no duplicate orders, unexplained gaps, or manual database repair.
+The service can complete repeated daily local-shadow cycles unattended with no duplicate orders, unexplained gaps, or manual database repair.
 
 ## Not included
 

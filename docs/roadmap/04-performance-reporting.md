@@ -18,7 +18,7 @@ Make strategy behavior understandable and compare it fairly with SPY over the sa
    - Contribution by signal and position
 3. Generate a local HTML report with a compact machine-readable JSON companion.
 4. Include recommendations, explanations, data quality, warnings, orders, fills, positions, and run failures.
-5. Add `tradebot report weekly` and `tradebot report open`.
+5. Add `tradebot report daily` and `tradebot report open`.
 6. Preserve report inputs so an old report can be regenerated exactly.
 
 ## Tests
@@ -37,7 +37,7 @@ Make strategy behavior understandable and compare it fairly with SPY over the sa
 
 ## Exit criteria
 
-A weekly report answers what the bot knew, what it decided, what filled, why it decided it, and how the account performed versus SPY.
+A daily report answers what the bot knew, what it decided, what filled, why it decided it, and how the account performed versus SPY.
 
 ## Not included
 

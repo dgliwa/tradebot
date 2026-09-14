@@ -1,12 +1,12 @@
-# Step 2: Weekly signals and recommendations
+# Step 2: Daily signals and recommendations
 
 ## Objective
 
-Produce reproducible weekly rankings using only information available at the decision timestamp.
+Produce reproducible rankings after each completed trading session using only information available at the decision timestamp.
 
 ## Work
 
-1. Persist the weekly universe snapshot before calculating signals.
+1. Persist the daily politician-led universe snapshot before calculating signals.
 2. Implement momentum features from coherent `latest_prices` snapshots:
    - Short and medium lookback returns
    - Optional volatility penalty
@@ -19,7 +19,7 @@ Produce reproducible weekly rankings using only information available at the dec
 4. Normalize component scores cross-sectionally without allowing future data into the run.
 5. Combine active signals using the approved strategy contract.
 6. Persist component values, normalized scores, weights, composite score, rank, and explanation.
-7. Add `tradebot run-weekly --dry-run` and `tradebot recommendations show`.
+7. Add `tradebot run-daily --dry-run` and `tradebot recommendations show`.
 8. Refuse recommendation creation when required ticker/source coverage is incomplete.
 
 ## Tests
