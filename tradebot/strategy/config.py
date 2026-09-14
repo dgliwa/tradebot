@@ -36,6 +36,9 @@ class Universe:
 class Signals:
     momentum_21_weight: float = 0.4
     momentum_63_weight: float = 0.6
+    insider_value_weight: float = 0.5
+    insider_buyers_weight: float = 0.25
+    insider_recency_weight: float = 0.25
     insider_weight: float = 4 / 7
     momentum_weight: float = 3 / 7
 
@@ -101,6 +104,10 @@ class Strategy:
         if self.universe.lookback_days < 1 or self.universe.rank_improvement_threshold < 1:
             raise ValueError("Invalid universe settings")
         self._weights("momentum features", self.signals.momentum_21_weight, self.signals.momentum_63_weight)
+        self._weights(
+            "insider features", self.signals.insider_value_weight,
+            self.signals.insider_buyers_weight, self.signals.insider_recency_weight,
+        )
         self._weights("composite signals", self.signals.insider_weight, self.signals.momentum_weight)
         if not 0 < self.risk.stop_loss_fraction < 1 or min(
             self.risk.max_holding_days, self.risk.negative_score_runs, self.risk.stop_reentry_days

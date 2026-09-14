@@ -23,6 +23,9 @@ rank_improvement_threshold = 2
 [signals]
 momentum_21_weight = 0.4
 momentum_63_weight = 0.6
+insider_value_weight = 0.5
+insider_buyers_weight = 0.25
+insider_recency_weight = 0.25
 insider_weight = 0.5714285714285714
 momentum_weight = 0.4285714285714286
 

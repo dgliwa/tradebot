@@ -10,7 +10,7 @@ from tradebot.models.raw_record import FetchResult, RawRecord, TickerFetchResult
 from tradebot.models.validation import require_aware, validate_record
 
 
-def fetch_prices(universe: list[str], *, now: datetime | None = None, min_history: int = 50) -> tuple[list[RawRecord], FetchResult]:
+def fetch_prices(universe: list[str], *, now: datetime | None = None, min_history: int = 64) -> tuple[list[RawRecord], FetchResult]:
     now = now or datetime.now(UTC)
     require_aware(now)
     now = now.astimezone(UTC)
@@ -23,7 +23,7 @@ def fetch_prices(universe: list[str], *, now: datetime | None = None, min_histor
     result = FetchResult("yfinance", now)
     records: list[RawRecord] = []
     try:
-        df = yf.download(tickers=universe, period="3mo", interval="1d", auto_adjust=True,
+        df = yf.download(tickers=universe, period="6mo", interval="1d", auto_adjust=True,
                          group_by="ticker", progress=False)
     except Exception as exc:
         result.errors.append(f"Price download failed: {type(exc).__name__}: {exc}")

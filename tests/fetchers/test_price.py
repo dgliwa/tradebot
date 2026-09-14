@@ -10,7 +10,7 @@ NOW = datetime(2026, 7, 8, 22, tzinfo=UTC)
 
 
 def frame(tickers, *, sessions=None):
-    sessions = sessions or completed_sessions(NOW)[-50:]
+    sessions = sessions or completed_sessions(NOW)[-64:]
     columns = pd.MultiIndex.from_product([tickers, ["Open", "High", "Low", "Close", "Volume"]], names=["Ticker", "Price"])
     values = {(ticker, field): [1_000_000 + i if field == "Volume" else 100. + i for i in range(len(sessions))]
               for ticker in tickers for field in ("Open", "High", "Low", "Close", "Volume")}
@@ -21,7 +21,7 @@ def test_complete_histories_are_valid(monkeypatch):
     monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL", "MSFT"]))
     records, result = fetch_prices([" aapl ", "MSFT"], now=NOW)
     assert result.is_valid
-    assert result.row_count == 100
+    assert result.row_count == 128
     assert result.freshness_date == completed_sessions(NOW)[-1]
     assert all(record.fetched_at == NOW for record in records)
     assert all(type(record.data["volume"]) is int for record in records)
@@ -30,14 +30,14 @@ def test_complete_histories_are_valid(monkeypatch):
 def test_missing_ticker_is_explicit_partial_failure(monkeypatch):
     monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL"]))
     records, result = fetch_prices(["AAPL", "MSFT"], now=NOW)
-    assert len(records) == 50
+    assert len(records) == 64
     assert not result.is_valid
     assert result.tickers[1].ticker == "MSFT"
     assert "No ticker data" in result.tickers[1].errors[0]
 
 
 def test_stale_or_short_history_is_invalid(monkeypatch):
-    sessions = completed_sessions(NOW)[-49:]
+    sessions = completed_sessions(NOW)[-63:]
     monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL"], sessions=sessions))
     records, result = fetch_prices(["AAPL"], now=NOW)
     assert records == []
@@ -60,7 +60,7 @@ def test_bad_values_reject_entire_ticker(monkeypatch, field, value):
 def test_in_progress_daily_bar_is_excluded(monkeypatch):
     before_close = datetime(2026, 7, 8, 18, tzinfo=UTC)
     completed = completed_sessions(before_close)
-    sessions = completed[-50:] + [before_close.date()]
+    sessions = completed[-64:] + [before_close.date()]
     monkeypatch.setattr("tradebot.fetchers.price.yf.download", lambda **_: frame(["AAPL"], sessions=sessions))
     records, result = fetch_prices(["AAPL"], now=before_close)
     assert result.is_valid
