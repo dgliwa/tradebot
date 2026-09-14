@@ -4,7 +4,7 @@ import argparse
 import json
 import sys
 from dataclasses import asdict
-from datetime import date
+from datetime import UTC, date, datetime
 from pathlib import Path
 
 import duckdb
@@ -13,8 +13,10 @@ from tradebot.config import load_settings
 from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
 from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
+from tradebot.shadow.account import create_account
+from tradebot.shadow.service import run_shadow_cycle, shadow_status
 from tradebot.strategy import load_strategy
-from tradebot.strategy.daily import run_daily
+from tradebot.strategy.daily import effective_session, run_daily
 from tradebot.strategy.query import recommendation_rows
 
 
@@ -27,7 +29,14 @@ def parser() -> argparse.ArgumentParser:
     strategy = commands.add_parser("strategy", help="inspect the effective strategy contract")
     strategy.add_argument("action", choices=("show",))
     daily = commands.add_parser("run-daily", help="ingest and calculate a completed session")
-    daily.add_argument("--dry-run", action="store_true", help="create recommendations but no orders")
+    daily_mode = daily.add_mutually_exclusive_group(required=True)
+    daily_mode.add_argument("--dry-run", action="store_true", help="create recommendations but no orders")
+    daily_mode.add_argument("--shadow", action="store_true", help="create and fill local simulated orders")
+    daily.add_argument("--account", default="default")
+    shadow = commands.add_parser("shadow", help="manage the local simulated account")
+    shadow.add_argument("action", choices=("init", "status"))
+    shadow.add_argument("--account", default="default")
+    shadow.add_argument("--session", type=date.fromisoformat)
     recommendations = commands.add_parser("recommendations", help="inspect stored recommendations")
     recommendations.add_argument("action", choices=("show",))
     recommendations.add_argument("--run-id")
@@ -55,10 +64,19 @@ def run(argv: list[str] | None = None) -> int:
             if args.command == "recommendations":
                 print(json.dumps(recommendation_rows(conn, args.run_id), sort_keys=True))
                 return 0
+            if args.command == "shadow":
+                strategy = load_strategy(args.strategy)
+                account = create_account(conn, strategy, name=args.account)
+                if args.action == "init":
+                    print(json.dumps(asdict(account), sort_keys=True))
+                else:
+                    session = args.session or effective_session(strategy, datetime.now(UTC))
+                    print(json.dumps(shadow_status(conn, args.account, session), default=str, sort_keys=True))
+                return 0
             if args.command == "run-daily":
-                if not args.dry_run:
-                    raise ValueError("Order generation is not available yet; pass --dry-run")
-                result = run_daily(conn, settings, load_strategy(args.strategy))
+                strategy = load_strategy(args.strategy)
+                result = (run_shadow_cycle(conn, settings, strategy, account_name=args.account)
+                          if args.shadow else run_daily(conn, settings, strategy))
                 print(json.dumps(asdict(result), default=str, sort_keys=True))
                 return 0
             operations = []

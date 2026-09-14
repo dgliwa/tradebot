@@ -15,6 +15,8 @@ class RecommendationResult:
     selected: bool
     raw_values: dict[str, float]
     scores: dict[str, float]
+    entry_signal: bool = False
+    entry_reason: str | None = None
 
 
 @runtime_checkable

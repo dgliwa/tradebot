@@ -73,6 +73,17 @@ def test_invalid_fetch_exits_nonzero_without_partial_write(clean_env, monkeypatc
         assert conn.execute("SELECT count(*) FROM raw_prices").fetchone() == (0,)
 
 
+def test_shadow_account_init_is_idempotent(clean_env, capsys):
+    env_dir, _ = clean_env
+    args = ["--env-dir", str(env_dir), "shadow", "init"]
+    assert run(args) == 0
+    first = json.loads(capsys.readouterr().out)
+    assert run(args) == 0
+    second = json.loads(capsys.readouterr().out)
+    assert first == second
+    assert first["strategy_version"] == "0.1.0"
+
+
 def test_congressional_csv_import(clean_env, tmp_path, capsys):
     env_dir, db_path = clean_env
     csv_path = tmp_path / "political.csv"

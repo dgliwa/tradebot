@@ -42,15 +42,16 @@ def _stored_recommendations(conn: duckdb.DuckDBPyConnection, run_id: str) -> tup
                   max(CASE WHEN s.signal_type='insider' THEN s.raw_value END),
                   max(CASE WHEN s.signal_type='momentum' THEN s.score END),
                   max(CASE WHEN s.signal_type='insider' THEN s.score END),
-                  r.composite_score, r.rank, r.selected
+                  r.composite_score, r.rank, r.selected, r.entry_signal, r.entry_reason
            FROM recommendations r JOIN signals s ON s.run_id=r.run_id AND s.ticker=r.ticker
-           WHERE r.run_id=? GROUP BY r.ticker,r.composite_score,r.rank,r.selected ORDER BY r.rank""",
+           WHERE r.run_id=? GROUP BY r.ticker,r.composite_score,r.rank,r.selected,r.entry_signal,r.entry_reason
+           ORDER BY r.rank""",
         [run_id],
     ).fetchall()
     return tuple(RecommendationResult(
         ticker=row[0], raw_values={"momentum": row[1], "insider": row[2]},
         scores={"momentum": row[3], "insider": row[4]}, composite_score=row[5],
-        rank=row[6], selected=row[7],
+        rank=row[6], selected=row[7], entry_signal=row[8], entry_reason=row[9],
     ) for row in rows)
 
 

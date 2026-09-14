@@ -15,10 +15,11 @@ Simulate fake-money trading in DuckDB without using broker APIs or same-bar info
 7. Implement stop-loss evaluation without using prices unavailable at evaluation time.
 8. Apply splits and cash dividends consistently to positions and the benchmark.
 9. Add commands:
-   - `tradebot shadow create`
-   - `tradebot shadow submit <run-id>`
-   - `tradebot shadow settle`
+   - `tradebot shadow init`
+   - `tradebot run-daily --shadow`
    - `tradebot shadow status`
+
+   The daily shadow cycle settles eligible prior orders before creating new next-open orders.
 10. Ensure replaying any command cannot duplicate cash movements, orders, or fills.
 
 ## Tests

@@ -1,6 +1,6 @@
 # TradeBot
 
-A local-first weekly investing research pipeline. The current build initializes DuckDB and ingests validated daily prices and SEC Form 4 open-market purchases. Signal generation, reports, approvals, and Alpaca order execution are not implemented yet; no CLI command places trades. See the staged [`docs/roadmap/`](docs/roadmap/README.md) for the path to a fake-money proof of concept.
+A local-first daily investing research and simulated-trading pipeline. The execution pipeline accepts pluggable research strategies through `TradingStrategy`; the first implementation is `PelosiStrategy`. The current build ingests validated market data, imports politician disclosures, produces recommendations, and maintains a local shadow portfolio. No command places real or Alpaca orders.
 
 ## Setup
 
@@ -28,6 +28,39 @@ Commands print JSON and return `0` only when every requested ticker was checked 
 Price ingestion requires 50 completed NYSE daily sessions for every configured ticker. Each fetch is stored as an immutable per-ticker snapshot; `latest_prices` selects a complete latest snapshot rather than mixing Yahoo adjustment vintages.
 
 Insider ingestion scans the prior 90 calendar days using the SEC submissions index, its historical index files when relevant, and each filing's `primaryDocument`. A successful scan with zero code-P purchases is healthy. Malformed filings, unknown tickers, failed requests, and Form 4 amendments are reported as incomplete rather than treated as zero purchases. Accepted records retain the source URL and XML.
+
+### Politician disclosure import
+
+The initial provider is a strict manual CSV adapter. Export or create the disclosure file with these columns:
+
+```text
+source_id,politician,owner,ticker,transaction_type,asset_type,option_type,transaction_date,filed_at,amount_min,amount_max
+```
+
+Import a complete source extract and state the date through which it was checked:
+
+```bash
+uv run tradebot ingest congressional --file disclosures.csv --coverage-through 2026-09-13
+```
+
+Incomplete or stale congressional coverage blocks strategy runs.
+
+## Recommendations and local shadow trading
+
+```bash
+# Fetch candidate data and store recommendations; never creates orders.
+uv run tradebot run-daily --dry-run
+uv run tradebot recommendations show
+
+# Initialize and inspect the $10,000 local simulated account.
+uv run tradebot shadow init
+uv run tradebot shadow status
+
+# Run the same daily research cycle and create/fill local simulated orders.
+uv run tradebot run-daily --shadow
+```
+
+Shadow orders become eligible at the next market open and include configured unfavorable slippage. Cash, contributions, orders, fills, positions, stops, cooldowns, dividends, and splits are persisted idempotently in DuckDB. The shadow path cannot submit broker orders.
 
 ## Configuration
 

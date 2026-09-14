@@ -13,6 +13,20 @@ def _calendar():
     return mcal.get_calendar("NYSE")
 
 
+def next_session(after: date) -> date:
+    schedule = _calendar().schedule(start_date=after + timedelta(days=1), end_date=after + timedelta(days=14))
+    if schedule.empty:
+        raise ValueError(f"No market session found after {after}")
+    return schedule.index[0].date()
+
+
+def session_open(session: date) -> datetime:
+    schedule = _calendar().schedule(start_date=session, end_date=session)
+    if schedule.empty:
+        raise ValueError(f"Not a market session: {session}")
+    return schedule.iloc[0]["market_open"].to_pydatetime().astimezone(UTC)
+
+
 def completed_sessions(now: datetime) -> list[date]:
     """Allow 20 minutes after the close for the free daily feed to settle."""
     require_aware(now)

@@ -102,13 +102,29 @@ def score_candidates(
         for ticker in momentum_raw
     }
     ordering = sorted(composites, key=lambda ticker: (-composites[ticker], ticker))
+    candidate_by_ticker = {candidate.ticker: candidate for candidate in candidates}
     ranked = []
     for rank, ticker in enumerate(ordering, start=1):
         selected = rank <= strategy.capital.max_new_positions
+        previous = conn.execute(
+            """SELECT r.rank,u.source_filed_at FROM recommendations r
+               JOIN strategy_runs sr ON sr.id=r.run_id
+               JOIN universe_snapshots u ON u.run_id=r.run_id AND u.ticker=r.ticker
+               WHERE r.ticker=? AND sr.effective_session < ? AND sr.status='completed'
+               ORDER BY sr.effective_session DESC LIMIT 1""", [ticker, session]
+        ).fetchone()
+        source_filed_at = candidate_by_ticker[ticker].latest_filed_at
+        new_disclosure = previous is None or (
+            source_filed_at is not None and (previous[1] is None or source_filed_at > previous[1])
+        )
+        improved = previous is not None and previous[0] - rank >= strategy.universe.rank_improvement_threshold
+        entry_reason = "new_disclosure" if new_disclosure else "rank_improvement" if improved else None
         item = RecommendationResult(
             ticker=ticker, composite_score=composites[ticker], rank=rank, selected=selected,
             raw_values={"momentum": momentum_raw[ticker], "insider": insider_raw[ticker]},
             scores={"momentum": momentum_scores[ticker], "insider": insider_scores[ticker]},
+            entry_signal=selected and entry_reason is not None,
+            entry_reason=entry_reason if selected else None,
         )
         ranked.append(item)
         for signal_type, raw, score in (
@@ -126,9 +142,10 @@ def score_candidates(
         }}
         conn.execute(
             """INSERT INTO recommendations
-               (id, ticker, run_date, composite_score, rank, run_id, selected, explanation)
-               VALUES (?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING""",
+               (id,ticker,run_date,composite_score,rank,run_id,selected,explanation,entry_signal,entry_reason)
+               VALUES (?,?,?,?,?,?,?,?,?,?) ON CONFLICT DO NOTHING""",
             [_id(run_id, ticker, "recommendation"), ticker, session, item.composite_score,
-             rank, run_id, selected, json.dumps(explanation, sort_keys=True)],
+             rank, run_id, selected, json.dumps(explanation, sort_keys=True),
+             item.entry_signal, item.entry_reason],
         )
     return ranked

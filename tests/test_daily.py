@@ -49,6 +49,25 @@ def test_daily_run_and_replay(db, tmp_path, monkeypatch):
     assert db.execute("SELECT count(*) FROM strategy_runs").fetchone() == (1,)
 
 
+def test_daily_runner_accepts_strategy_contract_without_pelosi_logic(db):
+    class EmptyStrategy:
+        def __init__(self):
+            self.config = Strategy(name="empty-test")
+
+        def __getattr__(self, name):
+            return getattr(self.config, name)
+
+        def build_candidates(self, conn, run_id, session, *, owned_tickers=None):
+            return []
+
+        def score(self, conn, run_id, session, decision_at, candidates):
+            raise AssertionError("empty candidate strategies must not score")
+
+    strategy = EmptyStrategy()
+    result = run_daily(db, Settings(), strategy, decision_at=NOW)
+    assert result.recommendations == ()
+
+
 def test_before_configured_time_uses_previous_session():
     before_evaluation = datetime(2026, 7, 8, 21, tzinfo=UTC)  # 17:00 ET
     assert effective_session(Strategy(), before_evaluation) == date(2026, 7, 7)
