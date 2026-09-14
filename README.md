@@ -58,6 +58,9 @@ uv run tradebot shadow status
 
 # Run the same daily research cycle and create/fill local simulated orders.
 uv run tradebot run-daily --shadow
+
+# Generate contribution-adjusted SPY comparison in JSON and HTML.
+uv run tradebot report generate
 ```
 
 Shadow orders become eligible at the next market open and include configured unfavorable slippage. Cash, contributions, orders, fills, positions, stops, cooldowns, dividends, and splits are persisted idempotently in DuckDB. The shadow path cannot submit broker orders.

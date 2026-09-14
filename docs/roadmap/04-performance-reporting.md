@@ -18,7 +18,7 @@ Make strategy behavior understandable and compare it fairly with SPY over the sa
    - Contribution by signal and position
 3. Generate a local HTML report with a compact machine-readable JSON companion.
 4. Include recommendations, explanations, data quality, warnings, orders, fills, positions, and run failures.
-5. Add `tradebot report daily` and `tradebot report open`.
+5. Add `tradebot report generate`; it writes paths for both artifacts and leaves opening them to the platform/user.
 6. Preserve report inputs so an old report can be regenerated exactly.
 
 ## Tests
@@ -33,7 +33,7 @@ Make strategy behavior understandable and compare it fairly with SPY over the sa
 
 1. `feat: track a cash-flow-matched SPY benchmark`
 2. `feat: calculate shadow performance metrics`
-3. `feat: render auditable weekly reports`
+3. `feat: render auditable daily reports`
 
 ## Exit criteria
 

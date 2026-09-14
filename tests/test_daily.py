@@ -44,12 +44,12 @@ def test_daily_run_and_replay(db, tmp_path, monkeypatch):
     first = run_daily(db, settings, strategy, decision_at=NOW)
     replay = run_daily(db, settings, strategy, decision_at=NOW)
     assert not first.replayed and replay.replayed
-    assert calls == [["AAPL"], ["AAPL"]]
+    assert calls == [["AAPL", "SPY"], ["AAPL"]]
     assert first.recommendations[0].ticker == "AAPL"
     assert db.execute("SELECT count(*) FROM strategy_runs").fetchone() == (1,)
 
 
-def test_daily_runner_accepts_strategy_contract_without_pelosi_logic(db):
+def test_daily_runner_accepts_strategy_contract_without_pelosi_logic(db, monkeypatch):
     class EmptyStrategy:
         def __init__(self):
             self.config = Strategy(name="empty-test")
@@ -64,6 +64,10 @@ def test_daily_runner_accepts_strategy_contract_without_pelosi_logic(db):
             raise AssertionError("empty candidate strategies must not score")
 
     strategy = EmptyStrategy()
+    monkeypatch.setattr(
+        "tradebot.strategy.daily.ingest_prices",
+        lambda *args, **kwargs: IngestionSummary("mock", 0, 0, 0, "2026-07-08"),
+    )
     result = run_daily(db, Settings(), strategy, decision_at=NOW)
     assert result.recommendations == ()
 

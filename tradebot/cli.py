@@ -13,6 +13,7 @@ from tradebot.config import load_settings
 from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
 from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
+from tradebot.report import generate_report
 from tradebot.shadow.account import create_account
 from tradebot.shadow.service import run_shadow_cycle, shadow_status
 from tradebot.strategy import load_strategy
@@ -37,6 +38,11 @@ def parser() -> argparse.ArgumentParser:
     shadow.add_argument("action", choices=("init", "status"))
     shadow.add_argument("--account", default="default")
     shadow.add_argument("--session", type=date.fromisoformat)
+    report = commands.add_parser("report", help="generate local JSON and HTML performance reports")
+    report.add_argument("action", choices=("generate",))
+    report.add_argument("--account", default="default")
+    report.add_argument("--session", type=date.fromisoformat)
+    report.add_argument("--output", type=Path, default=Path("reports"))
     recommendations = commands.add_parser("recommendations", help="inspect stored recommendations")
     recommendations.add_argument("action", choices=("show",))
     recommendations.add_argument("--run-id")
@@ -63,6 +69,14 @@ def run(argv: list[str] | None = None) -> int:
                 return 0
             if args.command == "recommendations":
                 print(json.dumps(recommendation_rows(conn, args.run_id), sort_keys=True))
+                return 0
+            if args.command == "report":
+                strategy = load_strategy(args.strategy)
+                session = args.session or effective_session(strategy, datetime.now(UTC))
+                paths = generate_report(
+                    conn, strategy, session, account_name=args.account, output_root=args.output
+                )
+                print(json.dumps({"json": str(paths[0]), "html": str(paths[1])}, sort_keys=True))
                 return 0
             if args.command == "shadow":
                 strategy = load_strategy(args.strategy)

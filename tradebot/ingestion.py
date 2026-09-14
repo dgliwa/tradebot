@@ -66,7 +66,7 @@ def ingest_prices(
     conn: duckdb.DuckDBPyConnection, settings: Settings, *,
     universe: list[str] | None = None, now: datetime | None = None,
 ) -> IngestionSummary:
-    tickers = universe or settings.universe
+    tickers = settings.universe if universe is None else universe
     records, result = fetch_prices(tickers, **({"now": now} if now else {}))
     if not result.is_valid:
         _record_coverage(conn, result)
@@ -80,7 +80,7 @@ def ingest_insider(
     conn: duckdb.DuckDBPyConnection, settings: Settings, *,
     universe: list[str] | None = None, now: datetime | None = None,
 ) -> IngestionSummary:
-    tickers = universe or settings.universe
+    tickers = settings.universe if universe is None else universe
     records, result = fetch_insider(
         tickers, user_agent=settings.sec_user_agent, **({"now": now} if now else {})
     )

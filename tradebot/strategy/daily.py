@@ -66,21 +66,22 @@ def run_daily(
         return DailyResult(run.id, session, True, _stored_recommendations(conn, run.id))
     try:
         candidates = strategy.build_candidates(conn, run.id, session, owned_tickers=owned_tickers)
-        if not candidates:
-            finish_run(conn, run.id)
-            return DailyResult(run.id, session, False, ())
-        tickers = [candidate.ticker for candidate in candidates]
+        tickers = list(dict.fromkeys([*(candidate.ticker for candidate in candidates), strategy.benchmark]))
         price = ingest_prices(conn, settings, universe=tickers, now=decision_at)
-        insider = ingest_insider(conn, settings, universe=tickers, now=decision_at)
-        ingestion = (price, insider)
+        ingestion = [price]
+        if candidates:
+            ingestion.append(ingest_insider(conn, settings, universe=[candidate.ticker for candidate in candidates], now=decision_at))
         errors = [error for summary in ingestion for error in summary.errors]
         if errors:
             raise ValueError("; ".join(errors))
+        if not candidates:
+            finish_run(conn, run.id)
+            return DailyResult(run.id, session, False, (), tuple(ingestion))
         recommendations = tuple(strategy.score(
             conn, run.id, session, decision_at, candidates
         ))
         finish_run(conn, run.id)
-        return DailyResult(run.id, session, False, recommendations, ingestion)
+        return DailyResult(run.id, session, False, recommendations, tuple(ingestion))
     except Exception as exc:
         finish_run(conn, run.id, error=str(exc))
         raise

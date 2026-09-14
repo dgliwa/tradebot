@@ -6,6 +6,8 @@ from datetime import UTC, date, datetime
 import duckdb
 
 from tradebot.config import Settings
+from tradebot.report.benchmark import sync_benchmark
+from tradebot.report.performance import PerformanceSnapshot, record_performance
 from tradebot.shadow.account import apply_weekly_contribution, create_account, load_account
 from tradebot.shadow.actions import apply_corporate_actions
 from tradebot.shadow.orders import generate_entry_orders, generate_exit_orders, settle_pending_orders
@@ -25,6 +27,7 @@ class ShadowCycleResult:
     entry_orders_created: int
     exit_orders_created: int
     portfolio: Portfolio
+    performance: PerformanceSnapshot
 
 
 def run_shadow_cycle(
@@ -36,13 +39,18 @@ def run_shadow_cycle(
     owned = {position.ticker for position in positions(conn, account.id)}
     daily = run_daily(conn, settings, strategy, decision_at=decision_at, owned_tickers=owned)
     contribution = apply_weekly_contribution(conn, account, strategy, daily.session, decision_at)
+    benchmark_equity = sync_benchmark(conn, account, strategy.benchmark, daily.session)
     actions = apply_corporate_actions(conn, account, daily.session, decision_at)
     filled, rejected = settle_pending_orders(conn, account, strategy, daily.session)
     exits = generate_exit_orders(conn, account, strategy, daily.run_id, daily.session, decision_at)
     entries = generate_entry_orders(conn, account, strategy, daily.run_id, daily.session, decision_at)
+    state = portfolio(conn, account.id, daily.session)
+    performance = record_performance(
+        conn, account, daily.session, state, benchmark_equity, decision_at
+    )
     return ShadowCycleResult(
         daily, account.id, contribution, actions, filled, rejected, entries, exits,
-        portfolio(conn, account.id, daily.session),
+        state, performance,
     )
 
 
