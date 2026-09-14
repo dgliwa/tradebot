@@ -213,10 +213,13 @@ def set_kill_switch(conn: duckdb.DuckDBPyConnection, active: bool) -> None:
     )
 
 
-def enable_automatic_submission(conn: duckdb.DuckDBPyConnection) -> None:
+def enable_automatic_submission(
+    conn: duckdb.DuckDBPyConnection, strategy: TradingStrategy,
+) -> None:
     state = ensure_paper_state(conn)
-    if state["reconciled_order_count"] < 10:
-        raise ValueError("Ten reconciled paper fills are required before automation")
+    required = strategy.paper.auto_submit_after_reconciled_orders
+    if state["reconciled_order_count"] < required:
+        raise ValueError(f"{required} reconciled paper fills are required before automation")
     if state["kill_switch"]:
         raise ValueError("Disable the kill switch before enabling automation")
     conn.execute(

@@ -53,6 +53,9 @@ class TradingStrategy(Protocol):
     @property
     def paper(self) -> Any: ...
 
+    @property
+    def evaluation(self) -> Any: ...
+
     def build_candidates(
         self, conn: duckdb.DuckDBPyConnection, run_id: str, session: date,
         *, owned_tickers: set[str] | None = None,

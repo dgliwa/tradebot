@@ -25,7 +25,7 @@ uv run tradebot ingest all
 
 Commands print JSON and return `0` only when every requested ticker was checked successfully. Exit `2` means configuration or source coverage failed. Invalid or partial source results are not written.
 
-Price ingestion requires 50 completed NYSE daily sessions for every configured ticker. Each fetch is stored as an immutable per-ticker snapshot; `latest_prices` selects a complete latest snapshot rather than mixing Yahoo adjustment vintages.
+Price ingestion requires 64 completed NYSE daily sessions for every configured ticker. Each fetch is stored as an immutable per-ticker snapshot; `latest_prices` selects a complete latest snapshot rather than mixing Yahoo adjustment vintages.
 
 Insider ingestion scans the prior 90 calendar days using the SEC submissions index, its historical index files when relevant, and each filing's `primaryDocument`. A successful scan with zero code-P purchases is healthy. Malformed filings, unknown tickers, failed requests, and Form 4 amendments are reported as incomplete rather than treated as zero purchases. Accepted records retain the source URL and XML.
 
@@ -89,6 +89,14 @@ uv run tradebot service status
 ```
 
 A Docker deployment is included with `compose.yaml`. See [`docs/operations.md`](docs/operations.md) for container setup, health checks, backup/restore, clock requirements, and failure recovery.
+
+Track the frozen forward experiment without promoting automatically:
+
+```bash
+uv run tradebot evaluation status
+```
+
+This reports the 12-week minimum/26-week target shadow window, contribution-adjusted SPY comparison, 15% drawdown abort rule, data completeness, and the separate 8-week/10-fill Alpaca paper gates.
 
 ## Configuration
 

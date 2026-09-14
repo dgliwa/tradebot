@@ -12,6 +12,7 @@ import duckdb
 from tradebot.config import load_settings
 from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
+from tradebot.evaluation import evaluate_experiment
 from tradebot.execution.broker import AlpacaPaperBroker
 from tradebot.execution.paper import (
     approve_intent, enable_automatic_submission, ensure_paper_state, pending_intents,
@@ -44,6 +45,9 @@ def parser() -> argparse.ArgumentParser:
     shadow.add_argument("action", choices=("init", "status"))
     shadow.add_argument("--account", default="default")
     shadow.add_argument("--session", type=date.fromisoformat)
+    evaluation = commands.add_parser("evaluation", help="evaluate forward-test promotion and abort gates")
+    evaluation.add_argument("action", choices=("status",))
+    evaluation.add_argument("--account", default="default")
     paper = commands.add_parser("paper", help="manage guarded Alpaca paper-order intents")
     paper.add_argument("action", choices=("status", "pending", "approve", "reject", "reconcile", "kill", "unkill", "auto-enable"))
     paper.add_argument("intent_id", nargs="?")
@@ -84,6 +88,11 @@ def run(argv: list[str] | None = None) -> int:
             if args.command == "recommendations":
                 print(json.dumps(recommendation_rows(conn, args.run_id), sort_keys=True))
                 return 0
+            if args.command == "evaluation":
+                print(json.dumps(evaluate_experiment(
+                    conn, load_strategy(args.strategy), account_name=args.account
+                ), sort_keys=True))
+                return 0
             if args.command == "paper":
                 state = ensure_paper_state(conn)
                 if args.action == "status":
@@ -94,7 +103,7 @@ def run(argv: list[str] | None = None) -> int:
                     print(json.dumps(ensure_paper_state(conn), sort_keys=True))
                     return 0
                 if args.action == "auto-enable":
-                    enable_automatic_submission(conn)
+                    enable_automatic_submission(conn, load_strategy(args.strategy))
                     print(json.dumps(ensure_paper_state(conn), sort_keys=True))
                     return 0
                 account = load_account(conn, args.account)

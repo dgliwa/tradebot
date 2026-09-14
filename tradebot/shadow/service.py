@@ -6,7 +6,7 @@ from datetime import UTC, date, datetime
 import duckdb
 
 from tradebot.config import Settings
-from tradebot.execution.paper import plan_intents
+from tradebot.execution.paper import plan_intents, set_kill_switch
 from tradebot.report.benchmark import sync_benchmark
 from tradebot.report.performance import PerformanceSnapshot, record_performance
 from tradebot.shadow.account import apply_weekly_contribution, create_account, load_account
@@ -51,6 +51,19 @@ def run_shadow_cycle(
     performance = record_performance(
         conn, account, daily.session, state, benchmark_equity, decision_at
     )
+    if performance.drawdown <= -strategy.evaluation.max_drawdown_fraction:
+        conn.execute(
+            """UPDATE shadow_orders SET status='canceled',diagnostics=?
+               WHERE account_id=? AND run_id=? AND side='buy' AND status='pending'""",
+            ['{"error":"experiment drawdown abort"}', account.id, daily.run_id],
+        )
+        conn.execute(
+            """UPDATE broker_order_intents SET status='canceled',diagnostics=?
+               WHERE account_id=? AND status='awaiting_approval' AND shadow_order_id IN
+                 (SELECT id FROM shadow_orders WHERE run_id=?)""",
+            ['{"error":"experiment drawdown abort"}', account.id, daily.run_id],
+        )
+        set_kill_switch(conn, True)
     return ShadowCycleResult(
         daily, account.id, contribution, actions, filled, rejected, entries, exits,
         paper_intents, state, performance,

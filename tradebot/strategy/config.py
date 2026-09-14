@@ -68,6 +68,14 @@ class Paper:
 
 
 @dataclass(frozen=True)
+class Evaluation:
+    min_shadow_weeks: int = 12
+    min_paper_weeks: int = 8
+    max_drawdown_fraction: float = 0.15
+    target_shadow_weeks: int = 26
+
+
+@dataclass(frozen=True)
 class Strategy:
     implementation: str = "pelosi"
     version: str = "0.1.0"
@@ -80,6 +88,7 @@ class Strategy:
     risk: Risk = field(default_factory=Risk)
     execution: Execution = field(default_factory=Execution)
     paper: Paper = field(default_factory=Paper)
+    evaluation: Evaluation = field(default_factory=Evaluation)
 
     def __post_init__(self) -> None:
         if self.implementation != "pelosi":
@@ -128,6 +137,10 @@ class Strategy:
             raise ValueError("Paper order limit exceeds strategy position size")
         if not 1 <= self.paper.max_daily_new_positions <= self.capital.max_new_positions:
             raise ValueError("Paper daily limit exceeds strategy limit")
+        if not (1 <= self.evaluation.min_shadow_weeks <= self.evaluation.target_shadow_weeks):
+            raise ValueError("Evaluation shadow week bounds are invalid")
+        if self.evaluation.min_paper_weeks < 1 or not 0 < self.evaluation.max_drawdown_fraction < 1:
+            raise ValueError("Evaluation paper weeks and drawdown must be positive")
 
     @staticmethod
     def _weights(label: str, *weights: float) -> None:
@@ -156,6 +169,7 @@ def load_strategy_config(path: Path = Path("strategy.toml")) -> Strategy:
         "risk": Risk,
         "execution": Execution,
         "paper": Paper,
+        "evaluation": Evaluation,
     }
     unknown = set(values) - {"implementation", "version", "name", "benchmark", *sections}
     if unknown:

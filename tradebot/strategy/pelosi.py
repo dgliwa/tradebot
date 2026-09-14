@@ -64,6 +64,10 @@ class PelosiStrategy:
     def paper(self):
         return self.config.paper
 
+    @property
+    def evaluation(self):
+        return self.config.evaluation
+
     def build_candidates(
         self, conn: duckdb.DuckDBPyConnection, run_id: str, session: date,
         *, owned_tickers: set[str] | None = None,

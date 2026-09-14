@@ -2,6 +2,12 @@
 
 These decisions define strategy version `0.1.0` and remain frozen during forward evaluation. Changes require a new strategy version and configuration hash.
 
+## Architecture
+
+- Research approaches implement the strategy-agnostic `TradingStrategy` contract.
+- The first plugin is `PelosiStrategy`; accounting, reporting, scheduling, and broker execution do not depend on Pelosi-specific logic.
+- New approaches use distinct immutable versions/configuration hashes and never rewrite prior results.
+
 ## Operation
 
 - Evaluate after every completed US trading session at 18:00 America/New_York.

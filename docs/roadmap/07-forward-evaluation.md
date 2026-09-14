@@ -9,7 +9,7 @@ Operate a frozen strategy long enough to evaluate reliability and gather prelimi
 1. Freeze the strategy version for a declared evaluation window.
 2. Run local shadow for an initial operational period.
 3. Run local shadow and Alpaca paper in parallel to measure fill-model differences.
-4. Record weekly observations without changing strategy parameters.
+4. Record daily observations without changing strategy parameters.
 5. Hold monthly reviews covering:
    - Data and scheduler reliability
    - Recommendation stability
@@ -18,7 +18,8 @@ Operate a frozen strategy long enough to evaluate reliability and gather prelimi
    - Turnover, slippage, concentration, and signal contribution
    - Incidents and manual interventions
 6. Define change control: proposed changes create a future strategy version and never rewrite prior results.
-7. Produce a final go/no-go report for continued paper testing—not automatic live promotion.
+7. Run `tradebot evaluation status` to persist and display the current observation, data-health, performance, drawdown, reconciliation, and abort gates.
+8. Produce a final go/no-go report for continued paper testing—not automatic live promotion.
 
 ## Suggested timeline
 
@@ -30,7 +31,8 @@ Eight weeks can show operational reliability but is generally too short to estab
 
 ## PoC success criteria
 
-- At least four consecutive scheduled runs complete without manual database repair.
+- At least 12 weeks of complete local-shadow sessions are observed; 26 weeks remains the target.
+- Before live review, at least 8 weeks of Alpaca paper activity and 10 uniquely reconciled fills are required.
 - Required data coverage and failed-run behavior are visible.
 - Recommendation, order, fill, and ledger state are fully auditable.
 - Local and Alpaca paper positions reconcile or have explained differences.

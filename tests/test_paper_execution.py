@@ -66,10 +66,10 @@ def test_reconciliation_unlocks_automation_only_after_ten_fills(db):
     assert db.execute("SELECT count(*) FROM broker_order_events WHERE broker_status='filled'").fetchone() == (1,)
     reconcile_orders(db, account, broker, NOW)
     assert ensure_paper_state(db)["reconciled_order_count"] == 1
-    with pytest.raises(ValueError, match="Ten reconciled"):
-        enable_automatic_submission(db)
+    with pytest.raises(ValueError, match="10 reconciled"):
+        enable_automatic_submission(db, strategy)
     db.execute("UPDATE paper_execution_state SET reconciled_order_count=10 WHERE id")
-    enable_automatic_submission(db)
+    enable_automatic_submission(db, strategy)
     assert ensure_paper_state(db)["auto_enabled"]
 
 

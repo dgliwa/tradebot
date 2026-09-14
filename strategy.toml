@@ -47,3 +47,9 @@ allow_short = false
 auto_submit_after_reconciled_orders = 10
 max_order_fraction = 0.03
 max_daily_new_positions = 3
+
+[evaluation]
+min_shadow_weeks = 12
+min_paper_weeks = 8
+max_drawdown_fraction = 0.15
+target_shadow_weeks = 26

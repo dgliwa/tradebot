@@ -13,6 +13,13 @@ def _calendar():
     return mcal.get_calendar("NYSE")
 
 
+def sessions_between(start: date, end: date) -> list[date]:
+    if end < start:
+        return []
+    schedule = _calendar().schedule(start_date=start, end_date=end)
+    return [value.date() for value in schedule.index]
+
+
 def next_session(after: date) -> date:
     schedule = _calendar().schedule(start_date=after + timedelta(days=1), end_date=after + timedelta(days=14))
     if schedule.empty:
