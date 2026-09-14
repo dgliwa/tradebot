@@ -8,6 +8,7 @@ from datetime import UTC, datetime
 import duckdb
 
 from tradebot.execution.broker import BrokerOrder, PaperBroker
+from tradebot.fetchers.market import session_open
 from tradebot.shadow.account import ShadowAccount
 from tradebot.shadow.portfolio import positions
 from tradebot.strategy.base import TradingStrategy
@@ -158,7 +159,8 @@ def approve_intent(
         raise ValueError("Paper execution kill switch is active")
     reconcile_orders(conn, account, broker, now)
     row = conn.execute(
-        """SELECT i.id,i.shadow_order_id,i.client_order_id,i.status,o.ticker,o.side,o.quantity,o.status
+        """SELECT i.id,i.shadow_order_id,i.client_order_id,i.status,o.ticker,o.side,o.quantity,o.status,
+                  o.eligible_session
            FROM broker_order_intents i JOIN shadow_orders o ON o.id=i.shadow_order_id
            WHERE i.id=? AND i.account_id=?""", [intent_id, account.id]
     ).fetchone()
@@ -168,6 +170,8 @@ def approve_intent(
         return PaperIntent(*row[:7])
     if row[7] != "pending":
         raise ValueError("Linked shadow order is no longer pending")
+    if now >= session_open(row[8]):
+        raise ValueError("Paper intent is stale because its eligible market session has opened")
     if row[6] <= 0:
         raise ValueError("Paper quantity must be positive")
     if row[5] == "buy":
@@ -228,6 +232,26 @@ def enable_automatic_submission(
     )
 
 
+def expire_stale_intents(
+    conn: duckdb.DuckDBPyConnection, account: ShadowAccount, now: datetime | None = None,
+) -> int:
+    now = now or datetime.now(UTC)
+    rows = conn.execute(
+        """SELECT i.id,o.status,o.eligible_session FROM broker_order_intents i
+           JOIN shadow_orders o ON o.id=i.shadow_order_id
+           WHERE i.account_id=? AND i.status='awaiting_approval'""", [account.id]
+    ).fetchall()
+    expired = 0
+    for intent_id, shadow_status, eligible in rows:
+        if shadow_status != "pending" or now >= session_open(eligible):
+            expired += conn.execute(
+                """UPDATE broker_order_intents SET status='canceled',reconciled_at=?,diagnostics=?
+                   WHERE id=? AND status='awaiting_approval' RETURNING id""",
+                [now, json.dumps({"reason": "stale paper intent"}), intent_id],
+            ).fetchone() is not None
+    return expired
+
+
 def submit_automatic_intents(
     conn: duckdb.DuckDBPyConnection, account: ShadowAccount, strategy: TradingStrategy,
     broker: PaperBroker,
@@ -235,6 +259,7 @@ def submit_automatic_intents(
     state = ensure_paper_state(conn)
     if not state["auto_enabled"] or state["kill_switch"]:
         return 0
+    expire_stale_intents(conn, account)
     count = 0
     for intent in pending_intents(conn, account):
         if intent.status == "awaiting_approval":

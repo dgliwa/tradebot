@@ -73,6 +73,16 @@ def test_reconciliation_unlocks_automation_only_after_ten_fills(db):
     assert ensure_paper_state(db)["auto_enabled"]
 
 
+def test_stale_intent_is_rejected_after_eligible_open(db):
+    strategy, account, intent = setup_intent(db)
+    broker = FakePaperBroker()
+    with pytest.raises(ValueError, match="stale"):
+        approve_intent(
+            db, account, strategy, intent.id, broker,
+            datetime(2026, 7, 9, 15, tzinfo=UTC),
+        )
+
+
 def test_operator_can_reject_pending_intent(db):
     _, account, intent = setup_intent(db)
     reject_intent(db, account, intent.id, NOW)
