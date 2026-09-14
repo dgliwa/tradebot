@@ -65,6 +65,18 @@ uv run tradebot report generate
 
 Shadow orders become eligible at the next market open and include configured unfavorable slippage. Cash, contributions, orders, fills, positions, stops, cooldowns, dividends, and splits are persisted idempotently in DuckDB. The shadow path cannot submit broker orders.
 
+## Unattended operation
+
+Run one cycle manually or keep the platform-neutral foreground service under your preferred supervisor:
+
+```bash
+uv run tradebot service run-once
+uv run tradebot service run
+uv run tradebot service status
+```
+
+A Docker deployment is included with `compose.yaml`. See [`docs/operations.md`](docs/operations.md) for container setup, health checks, backup/restore, clock requirements, and failure recovery.
+
 ## Configuration
 
 Select mode before loading its file:

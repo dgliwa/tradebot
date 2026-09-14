@@ -1,0 +1,18 @@
+services:
+  tradebot:
+    build: .
+    restart: unless-stopped
+    environment:
+      TRADEBOT_MODE: paper
+    env_file:
+      - .env.paper
+    volumes:
+      - ./data:/app/data
+      - ./reports:/app/reports
+      - ./strategy.toml:/app/strategy.toml:ro
+    healthcheck:
+      test: ["CMD", "uv", "run", "tradebot", "service", "health"]
+      interval: 1m
+      timeout: 10s
+      retries: 3
+      start_period: 30s

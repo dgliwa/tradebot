@@ -10,7 +10,7 @@ def test_init_db_from_empty_database(empty_db):
     init_db(empty_db)
     names = {r[0] for r in empty_db.execute("SHOW TABLES").fetchall()}
     assert {"raw_prices", "legacy_raw_prices", "price_snapshots", "latest_prices", "raw_insider", "orders", "trades"} <= names
-    assert empty_db.execute("SELECT version FROM schema_versions ORDER BY version").fetchall() == [(1,), (2,), (3,), (4,), (5,), (6,), (7,)]
+    assert empty_db.execute("SELECT version FROM schema_versions ORDER BY version").fetchall() == [(1,), (2,), (3,), (4,), (5,), (6,), (7,), (8,)]
 
 
 def test_upgrade_preserves_legacy_data(empty_db):

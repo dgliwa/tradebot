@@ -14,6 +14,7 @@ from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
 from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
 from tradebot.report import generate_report
+from tradebot.service import run_loop, run_once, service_status
 from tradebot.shadow.account import create_account
 from tradebot.shadow.service import run_shadow_cycle, shadow_status
 from tradebot.strategy import load_strategy
@@ -38,6 +39,10 @@ def parser() -> argparse.ArgumentParser:
     shadow.add_argument("action", choices=("init", "status"))
     shadow.add_argument("--account", default="default")
     shadow.add_argument("--session", type=date.fromisoformat)
+    service = commands.add_parser("service", help="run or inspect the platform-neutral scheduler")
+    service.add_argument("action", choices=("run-once", "run", "status", "health"))
+    service.add_argument("--poll-seconds", type=int, default=60)
+    service.add_argument("--output", type=Path, default=Path("reports"))
     report = commands.add_parser("report", help="generate local JSON and HTML performance reports")
     report.add_argument("action", choices=("generate",))
     report.add_argument("--account", default="default")
@@ -69,6 +74,22 @@ def run(argv: list[str] | None = None) -> int:
                 return 0
             if args.command == "recommendations":
                 print(json.dumps(recommendation_rows(conn, args.run_id), sort_keys=True))
+                return 0
+            if args.command == "service":
+                if args.action in {"status", "health"}:
+                    status = service_status(conn)
+                    print(json.dumps(status, sort_keys=True))
+                    if args.action == "health":
+                        lock = status["lock"]
+                        return 0 if lock and datetime.fromisoformat(lock["expires_at"]) > datetime.now(UTC) else 2
+                    return 0
+                strategy = load_strategy(args.strategy)
+                if args.action == "run-once":
+                    print(json.dumps(asdict(run_once(
+                        conn, settings, strategy, output_root=args.output
+                    )), sort_keys=True))
+                    return 0
+                run_loop(conn, settings, strategy, poll_seconds=args.poll_seconds, output_root=args.output)
                 return 0
             if args.command == "report":
                 strategy = load_strategy(args.strategy)
@@ -104,6 +125,9 @@ def run(argv: list[str] | None = None) -> int:
                 operations.append(ingest_insider(conn, settings))
             print(json.dumps([asdict(summary) for summary in operations], sort_keys=True))
             return 0 if all(summary.succeeded for summary in operations) else 2
+    except KeyboardInterrupt:
+        print("tradebot: service stopped", file=sys.stderr)
+        return 130
     except (duckdb.Error, OSError, RuntimeError, ValueError) as exc:
         print(f"tradebot: {exc}", file=sys.stderr)
         return 2
