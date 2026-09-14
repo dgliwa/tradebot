@@ -96,7 +96,7 @@ Track the frozen forward experiment without promoting automatically:
 uv run tradebot evaluation status
 ```
 
-This reports the 12-week minimum/26-week target shadow window, contribution-adjusted SPY comparison, 15% drawdown abort rule, data completeness, and the separate 8-week/10-fill Alpaca paper gates.
+This reports the 12-week minimum/26-week target shadow window, contribution-adjusted SPY comparison, 15% drawdown abort rule, data completeness, and the separate 8-week/10-fill Alpaca paper gates. See [`docs/roadmap/STATUS.md`](docs/roadmap/STATUS.md) for the implemented scope and remaining operational work.
 
 ## Configuration
 

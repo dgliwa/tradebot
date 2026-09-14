@@ -2,27 +2,20 @@
 
 ## Goal
 
-Run a reproducible weekly strategy with fake money over time, first through a deterministic local shadow portfolio and then through Alpaca paper trading. Every recommendation, order, fill, and performance result must be reconstructable from stored data.
+Run a reproducible daily strategy with fake money over time, first through a deterministic local shadow portfolio and then through Alpaca paper trading. Every recommendation, order, fill, and performance result must be reconstructable from stored data.
 
 ## Current baseline
 
-- Validated Yahoo daily-price ingestion with complete per-ticker snapshots
-- Validated SEC Form 4 purchase ingestion with source provenance
-- Transactional DuckDB migrations and writes
-- Isolated paper/live configuration
-- `tradebot init-db` and `tradebot ingest` commands
-- Offline test suite and CI
+Steps 1–6 are implemented and Step 7 is now an observation period rather than additional build work. The system can import political disclosures, produce daily recommendations, run a local shadow account, report against SPY, operate as a platform-neutral service, and optionally mirror explicitly approved orders to Alpaca paper.
 
-No signal, simulated portfolio, report, scheduler, approval, or broker integration exists yet.
-
-Approved PoC defaults are frozen in [`DECISIONS.md`](DECISIONS.md).
+Approved PoC defaults are frozen in [`DECISIONS.md`](DECISIONS.md). Current implementation and operational gaps are tracked in [`STATUS.md`](STATUS.md).
 
 ## Delivery sequence
 
 | Step | Deliverable | Main exit condition |
 |---|---|---|
 | [1](01-experiment-contract.md) | Frozen experiment contract | Every trading and measurement rule is explicit and versioned |
-| [2](02-weekly-signals.md) | Weekly signals and rankings | Dry run creates reproducible, explainable recommendations |
+| [2](02-weekly-signals.md) | Daily signals and rankings | Dry run creates reproducible, explainable recommendations |
 | [3](03-shadow-portfolio.md) | Local fake-money brokerage | Orders fill at later market opens and accounting reconciles |
 | [4](04-performance-reporting.md) | Audit and performance report | Every result can be traced to inputs, decisions, and fills |
 | [5](05-automation.md) | Idempotent scheduled operation | Daily evaluations run under a platform-neutral service without duplicate work |
