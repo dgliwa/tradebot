@@ -8,7 +8,7 @@ from datetime import UTC, date, datetime
 import duckdb
 
 from tradebot.models.validation import require_aware
-from tradebot.strategy.config import Strategy
+from tradebot.strategy.base import TradingStrategy
 
 
 @dataclass(frozen=True)
@@ -19,13 +19,13 @@ class StrategyRun:
     created: bool
 
 
-def run_id(strategy: Strategy, session: date) -> str:
+def run_id(strategy: TradingStrategy, session: date) -> str:
     value = f"{strategy.name}:{strategy.version}:{session.isoformat()}"
     return hashlib.sha256(value.encode()).hexdigest()[:24]
 
 
 def start_run(
-    conn: duckdb.DuckDBPyConnection, strategy: Strategy, session: date,
+    conn: duckdb.DuckDBPyConnection, strategy: TradingStrategy, session: date,
     decision_at: datetime | None = None,
 ) -> StrategyRun:
     decision_at = decision_at or datetime.now(UTC)

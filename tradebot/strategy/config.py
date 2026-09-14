@@ -69,6 +69,7 @@ class Paper:
 
 @dataclass(frozen=True)
 class Strategy:
+    implementation: str = "pelosi"
     version: str = "0.1.0"
     name: str = "pelosi-led-long-equity"
     benchmark: str = "SPY"
@@ -81,6 +82,8 @@ class Strategy:
     paper: Paper = field(default_factory=Paper)
 
     def __post_init__(self) -> None:
+        if self.implementation != "pelosi":
+            raise ValueError(f"Unknown strategy implementation: {self.implementation}")
         if not self.version.strip() or not self.name.strip():
             raise ValueError("Strategy name and version are required")
         if self.benchmark != self.benchmark.strip().upper() or not self.benchmark:
@@ -140,7 +143,7 @@ class Strategy:
         return hashlib.sha256(self.canonical_json.encode()).hexdigest()
 
 
-def load_strategy(path: Path = Path("strategy.toml")) -> Strategy:
+def load_strategy_config(path: Path = Path("strategy.toml")) -> Strategy:
     try:
         values = tomllib.loads(path.read_text(encoding="utf-8"))
     except FileNotFoundError as exc:
@@ -154,10 +157,10 @@ def load_strategy(path: Path = Path("strategy.toml")) -> Strategy:
         "execution": Execution,
         "paper": Paper,
     }
-    unknown = set(values) - {"version", "name", "benchmark", *sections}
+    unknown = set(values) - {"implementation", "version", "name", "benchmark", *sections}
     if unknown:
         raise ValueError(f"Unknown strategy keys: {', '.join(sorted(unknown))}")
-    kwargs = {key: values[key] for key in ("version", "name", "benchmark") if key in values}
+    kwargs = {key: values[key] for key in ("implementation", "version", "name", "benchmark") if key in values}
     for name, kind in sections.items():
         section = values.get(name, {})
         if not isinstance(section, dict):
@@ -169,3 +172,14 @@ def load_strategy(path: Path = Path("strategy.toml")) -> Strategy:
         except TypeError as exc:
             raise ValueError(f"Invalid strategy section {name}: {exc}") from exc
     return Strategy(**kwargs)
+
+
+def load_strategy(path: Path = Path("strategy.toml")):
+    from tradebot.strategy.pelosi import PelosiStrategy
+
+    config = load_strategy_config(path)
+    implementations = {"pelosi": PelosiStrategy}
+    try:
+        return implementations[config.implementation](config)
+    except KeyError as exc:
+        raise ValueError(f"Unknown strategy implementation: {config.implementation}") from exc

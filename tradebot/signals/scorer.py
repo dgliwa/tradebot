@@ -3,25 +3,13 @@ from __future__ import annotations
 import hashlib
 import json
 import math
-from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 
 import duckdb
 
+from tradebot.strategy.base import RecommendationResult
 from tradebot.strategy.config import Strategy
 from tradebot.strategy.universe import Candidate
-
-
-@dataclass(frozen=True)
-class ScoredRecommendation:
-    ticker: str
-    momentum_raw: float
-    insider_raw: float
-    momentum_score: float
-    insider_score: float
-    composite_score: float
-    rank: int
-    selected: bool
 
 
 def _id(*parts: str) -> int:
@@ -89,7 +77,7 @@ def _insider(
 def score_candidates(
     conn: duckdb.DuckDBPyConnection, strategy: Strategy, run_id: str,
     session: date, decision_at: datetime, candidates: list[Candidate],
-) -> list[ScoredRecommendation]:
+) -> list[RecommendationResult]:
     if not candidates:
         return []
     momentum_raw: dict[str, float] = {}
@@ -117,14 +105,15 @@ def score_candidates(
     ranked = []
     for rank, ticker in enumerate(ordering, start=1):
         selected = rank <= strategy.capital.max_new_positions
-        item = ScoredRecommendation(
-            ticker, momentum_raw[ticker], insider_raw[ticker], momentum_scores[ticker],
-            insider_scores[ticker], composites[ticker], rank, selected,
+        item = RecommendationResult(
+            ticker=ticker, composite_score=composites[ticker], rank=rank, selected=selected,
+            raw_values={"momentum": momentum_raw[ticker], "insider": insider_raw[ticker]},
+            scores={"momentum": momentum_scores[ticker], "insider": insider_scores[ticker]},
         )
         ranked.append(item)
         for signal_type, raw, score in (
-            ("momentum", item.momentum_raw, item.momentum_score),
-            ("insider", item.insider_raw, item.insider_score),
+            ("momentum", item.raw_values["momentum"], item.scores["momentum"]),
+            ("insider", item.raw_values["insider"], item.scores["insider"]),
         ):
             conn.execute(
                 """INSERT INTO signals (id, ticker, run_date, signal_type, score, run_id, raw_value, details)

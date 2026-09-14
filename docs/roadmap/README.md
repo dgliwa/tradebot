@@ -31,6 +31,7 @@ Approved PoC defaults are frozen in [`DECISIONS.md`](DECISIONS.md).
 
 ## Engineering rules
 
+- Implement strategies behind the common `TradingStrategy` contract; execution, accounting, reporting, and scheduling must not depend on Pelosi-specific logic.
 - Implement steps in order; later steps depend on earlier invariants.
 - Use numbered transactional migrations for schema changes.
 - Keep data availability time separate from event time to prevent look-ahead bias.

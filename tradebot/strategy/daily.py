@@ -9,10 +9,8 @@ import duckdb
 from tradebot.config import Settings
 from tradebot.fetchers.market import completed_sessions
 from tradebot.ingestion import IngestionSummary, ingest_insider, ingest_prices
-from tradebot.signals import ScoredRecommendation, score_candidates
-from tradebot.strategy.config import Strategy
+from tradebot.strategy.base import RecommendationResult, TradingStrategy
 from tradebot.strategy.runs import finish_run, start_run
-from tradebot.strategy.universe import build_universe
 
 
 @dataclass(frozen=True)
@@ -20,11 +18,11 @@ class DailyResult:
     run_id: str
     session: date
     replayed: bool
-    recommendations: tuple[ScoredRecommendation, ...]
+    recommendations: tuple[RecommendationResult, ...]
     ingestion: tuple[IngestionSummary, ...] = ()
 
 
-def effective_session(strategy: Strategy, decision_at: datetime) -> date:
+def effective_session(strategy: TradingStrategy, decision_at: datetime) -> date:
     sessions = completed_sessions(decision_at)
     if not sessions:
         raise ValueError("No completed market session available")
@@ -37,7 +35,7 @@ def effective_session(strategy: Strategy, decision_at: datetime) -> date:
     return sessions[-1]
 
 
-def _stored_recommendations(conn: duckdb.DuckDBPyConnection, run_id: str) -> tuple[ScoredRecommendation, ...]:
+def _stored_recommendations(conn: duckdb.DuckDBPyConnection, run_id: str) -> tuple[RecommendationResult, ...]:
     rows = conn.execute(
         """SELECT r.ticker,
                   max(CASE WHEN s.signal_type='momentum' THEN s.raw_value END),
@@ -49,11 +47,15 @@ def _stored_recommendations(conn: duckdb.DuckDBPyConnection, run_id: str) -> tup
            WHERE r.run_id=? GROUP BY r.ticker,r.composite_score,r.rank,r.selected ORDER BY r.rank""",
         [run_id],
     ).fetchall()
-    return tuple(ScoredRecommendation(*row) for row in rows)
+    return tuple(RecommendationResult(
+        ticker=row[0], raw_values={"momentum": row[1], "insider": row[2]},
+        scores={"momentum": row[3], "insider": row[4]}, composite_score=row[5],
+        rank=row[6], selected=row[7],
+    ) for row in rows)
 
 
 def run_daily(
-    conn: duckdb.DuckDBPyConnection, settings: Settings, strategy: Strategy,
+    conn: duckdb.DuckDBPyConnection, settings: Settings, strategy: TradingStrategy,
     *, decision_at: datetime | None = None, owned_tickers: set[str] | None = None,
 ) -> DailyResult:
     decision_at = (decision_at or datetime.now(UTC)).astimezone(UTC)
@@ -62,7 +64,7 @@ def run_daily(
     if run.status == "completed":
         return DailyResult(run.id, session, True, _stored_recommendations(conn, run.id))
     try:
-        candidates = build_universe(conn, strategy, run.id, session, owned_tickers=owned_tickers)
+        candidates = strategy.build_candidates(conn, run.id, session, owned_tickers=owned_tickers)
         if not candidates:
             finish_run(conn, run.id)
             return DailyResult(run.id, session, False, ())
@@ -73,8 +75,8 @@ def run_daily(
         errors = [error for summary in ingestion for error in summary.errors]
         if errors:
             raise ValueError("; ".join(errors))
-        recommendations = tuple(score_candidates(
-            conn, strategy, run.id, session, decision_at, candidates
+        recommendations = tuple(strategy.score(
+            conn, run.id, session, decision_at, candidates
         ))
         finish_run(conn, run.id)
         return DailyResult(run.id, session, False, recommendations, ingestion)

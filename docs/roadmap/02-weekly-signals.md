@@ -6,21 +6,22 @@ Produce reproducible rankings after each completed trading session using only in
 
 ## Work
 
-1. Persist the daily politician-led universe snapshot before calculating signals.
-2. Implement momentum features from coherent `latest_prices` snapshots:
+1. Define a strategy-agnostic `TradingStrategy` contract and implement this research approach as `PelosiStrategy`; downstream trading services depend only on the contract.
+2. Persist the daily politician-led universe snapshot before calculating signals.
+3. Implement momentum features from coherent `latest_prices` snapshots:
    - Short and medium lookback returns
    - Optional volatility penalty
    - Explicit handling of insufficient history
-3. Implement insider features using `filed_at` as the availability date:
+4. Implement insider features using `filed_at` as the availability date:
    - Purchase value when price is available
    - Number of distinct purchasers
    - Filing recency
    - Neutral result for a healthy scan with no purchases
-4. Normalize component scores cross-sectionally without allowing future data into the run.
-5. Combine active signals using the approved strategy contract.
-6. Persist component values, normalized scores, weights, composite score, rank, and explanation.
-7. Add `tradebot run-daily --dry-run` and `tradebot recommendations show`.
-8. Refuse recommendation creation when required ticker/source coverage is incomplete.
+5. Normalize component scores cross-sectionally without allowing future data into the run.
+6. Combine active signals using the approved strategy contract.
+7. Persist component values, normalized scores, weights, composite score, rank, and explanation.
+8. Add `tradebot run-daily --dry-run` and `tradebot recommendations show`.
+9. Refuse recommendation creation when required ticker/source coverage is incomplete.
 
 ## Tests
 

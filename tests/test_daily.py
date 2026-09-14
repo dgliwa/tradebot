@@ -8,6 +8,7 @@ from tradebot.ingestion import IngestionSummary
 from tradebot.models.raw_record import RawRecord
 from tradebot.strategy.config import Strategy
 from tradebot.strategy.daily import effective_session, run_daily
+from tradebot.strategy.pelosi import PelosiStrategy
 
 NOW = datetime(2026, 7, 8, 22, tzinfo=UTC)
 
@@ -39,8 +40,9 @@ def test_daily_run_and_replay(db, tmp_path, monkeypatch):
     monkeypatch.setattr("tradebot.strategy.daily.ingest_prices", healthy)
     monkeypatch.setattr("tradebot.strategy.daily.ingest_insider", healthy)
     settings = Settings(universe=["IGNORED"], sec_user_agent="TradeBot test@example.com")
-    first = run_daily(db, settings, Strategy(), decision_at=NOW)
-    replay = run_daily(db, settings, Strategy(), decision_at=NOW)
+    strategy = PelosiStrategy(Strategy())
+    first = run_daily(db, settings, strategy, decision_at=NOW)
+    replay = run_daily(db, settings, strategy, decision_at=NOW)
     assert not first.replayed and replay.replayed
     assert calls == [["AAPL"], ["AAPL"]]
     assert first.recommendations[0].ticker == "AAPL"

@@ -37,8 +37,8 @@ def test_signal_ranking_is_reproducible_and_explainable(db):
                   Candidate("NVDA", 10, date(2026, 7, 7), ("p2",))]
     results = score_candidates(db, Strategy(), "run-1", date(2026, 7, 8), NOW, candidates)
     assert [result.ticker for result in results] == ["AAPL", "NVDA"]
-    assert results[0].insider_score == 1
-    assert results[0].momentum_score == -1
+    assert results[0].scores["insider"] == 1
+    assert results[0].scores["momentum"] == -1
     assert results[0].composite_score == pytest.approx(1 / 7)
     assert db.execute("SELECT count(*) FROM signals").fetchone() == (4,)
     assert db.execute("SELECT count(*) FROM recommendations WHERE selected").fetchone() == (2,)
@@ -66,4 +66,4 @@ def test_insider_filed_after_session_is_excluded(db):
         db, Strategy(), "run", date(2026, 7, 8), NOW,
         [Candidate("AAPL", 1, date(2026, 7, 7), ("p",))],
     )[0]
-    assert result.insider_raw == 0
+    assert result.raw_values["insider"] == 0

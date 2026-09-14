@@ -1,3 +1,4 @@
+implementation = "pelosi"
 version = "0.1.0"
 name = "pelosi-led-long-equity"
 benchmark = "SPY"
