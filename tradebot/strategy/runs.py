@@ -37,6 +37,12 @@ def start_run(
     if existing:
         if existing[0] != strategy.config_hash:
             raise ValueError("Strategy version changed without a version bump")
+        if existing[1] == "failed":
+            conn.execute(
+                "UPDATE strategy_runs SET status = 'started', diagnostics = '{}', completed_at = NULL WHERE id = ?",
+                [identifier],
+            )
+            return StrategyRun(identifier, session, "started", False)
         return StrategyRun(identifier, session, existing[1], False)
     conn.execute(
         """INSERT INTO strategy_runs

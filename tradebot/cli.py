@@ -14,6 +14,8 @@ from tradebot.db import bind_mode, init_db
 from tradebot.db.connection import open_database
 from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
 from tradebot.strategy import load_strategy
+from tradebot.strategy.daily import run_daily
+from tradebot.strategy.query import recommendation_rows
 
 
 def parser() -> argparse.ArgumentParser:
@@ -24,6 +26,11 @@ def parser() -> argparse.ArgumentParser:
     commands.add_parser("init-db", help="initialize or upgrade the selected database")
     strategy = commands.add_parser("strategy", help="inspect the effective strategy contract")
     strategy.add_argument("action", choices=("show",))
+    daily = commands.add_parser("run-daily", help="ingest and calculate a completed session")
+    daily.add_argument("--dry-run", action="store_true", help="create recommendations but no orders")
+    recommendations = commands.add_parser("recommendations", help="inspect stored recommendations")
+    recommendations.add_argument("action", choices=("show",))
+    recommendations.add_argument("--run-id")
     ingest = commands.add_parser("ingest", help="fetch and atomically persist raw market data")
     ingest.add_argument("source", choices=("prices", "insider", "congressional", "all"))
     ingest.add_argument("--file", type=Path, help="manual congressional disclosure CSV")
@@ -44,6 +51,15 @@ def run(argv: list[str] | None = None) -> int:
             bind_mode(conn, settings.mode)
             if args.command == "init-db":
                 print(json.dumps({"status": "ok", "mode": settings.mode, "database": str(settings.db_path)}))
+                return 0
+            if args.command == "recommendations":
+                print(json.dumps(recommendation_rows(conn, args.run_id), sort_keys=True))
+                return 0
+            if args.command == "run-daily":
+                if not args.dry_run:
+                    raise ValueError("Order generation is not available yet; pass --dry-run")
+                result = run_daily(conn, settings, load_strategy(args.strategy))
+                print(json.dumps(asdict(result), default=str, sort_keys=True))
                 return 0
             operations = []
             if args.source == "congressional":
