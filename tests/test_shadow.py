@@ -105,6 +105,23 @@ def test_recorded_splits_and_dividends_are_applied_once(db):
     assert cash_balance(db, account.id) == pytest.approx(cash_before + split.quantity)
 
 
+def test_late_discovered_dividend_does_not_pay_positions_bought_after_ex_date(db):
+    strategy = PelosiStrategy(PelosiConfig())
+    account = create_account(db, strategy, created_at=NOW)
+    add_prices(db, "AAPL", datetime(2026, 7, 9, 22, tzinfo=UTC), [
+        (date(2026, 7, 8), 100), (date(2026, 7, 9), 100),
+    ])
+    run = add_recommendation(db, strategy)
+    generate_entry_orders(db, account, strategy, run.id, date(2026, 7, 8), NOW)
+    settle_pending_orders(db, account, strategy, date(2026, 7, 9))
+    cash_before = cash_balance(db, account.id)
+    db.execute(
+        "INSERT INTO corporate_actions VALUES ('old-div','AAPL','2026-07-08','dividend',1,'test',?)", [NOW]
+    )
+    assert apply_corporate_actions(db, account, date(2026, 7, 10), NOW) == 1
+    assert cash_balance(db, account.id) == cash_before
+
+
 def test_stop_exit_creates_cooldown_after_fill(db):
     strategy = PelosiStrategy(PelosiConfig())
     account = create_account(db, strategy, created_at=NOW)

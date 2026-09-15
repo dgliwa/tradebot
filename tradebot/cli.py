@@ -18,7 +18,7 @@ from tradebot.execution.paper import (
     approve_intent, enable_automatic_submission, ensure_paper_state, pending_intents,
     reconcile_orders, reject_intent, set_kill_switch,
 )
-from tradebot.ingestion import ingest_insider, ingest_political_csv, ingest_prices
+from tradebot.ingestion import ingest_corporate_actions, ingest_insider, ingest_political_csv, ingest_prices
 from tradebot.report import generate_report
 from tradebot.service import run_loop, run_once, service_status
 from tradebot.shadow.account import create_account, load_account
@@ -65,7 +65,7 @@ def parser() -> argparse.ArgumentParser:
     recommendations.add_argument("action", choices=("show",))
     recommendations.add_argument("--run-id")
     ingest = commands.add_parser("ingest", help="fetch and atomically persist raw market data")
-    ingest.add_argument("source", choices=("prices", "insider", "congressional", "all"))
+    ingest.add_argument("source", choices=("prices", "insider", "corporate-actions", "congressional", "all"))
     ingest.add_argument("--file", type=Path, help="manual congressional disclosure CSV")
     ingest.add_argument("--coverage-through", type=date.fromisoformat, help="latest filing date checked (YYYY-MM-DD)")
     return root
@@ -175,6 +175,8 @@ def run(argv: list[str] | None = None) -> int:
                 operations.append(ingest_prices(conn, settings))
             if args.source in {"insider", "all"}:
                 operations.append(ingest_insider(conn, settings))
+            if args.source in {"corporate-actions", "all"}:
+                operations.append(ingest_corporate_actions(conn, settings))
             print(json.dumps([asdict(summary) for summary in operations], sort_keys=True))
             return 0 if all(summary.succeeded for summary in operations) else 2
     except KeyboardInterrupt:

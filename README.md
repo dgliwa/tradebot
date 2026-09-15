@@ -1,6 +1,6 @@
 # TradeBot
 
-A local-first daily investing research and simulated-trading pipeline. The execution pipeline accepts pluggable research strategies through `TradingStrategy`; the first implementation is `PelosiStrategy`. The current build ingests validated market data, imports politician disclosures, produces recommendations, and maintains a local shadow portfolio. No command places real or Alpaca orders.
+A local-first daily investing research and simulated-trading pipeline. The execution pipeline accepts pluggable research strategies through `TradingStrategy`; the first implementation is `PelosiStrategy`. The current build ingests validated market data, imports politician disclosures, produces recommendations, maintains a local shadow portfolio, and can submit explicitly approved Alpaca paper orders. No command places live-money orders.
 
 ## Setup
 
@@ -20,12 +20,13 @@ Paper and live modes default to separate databases. A database is permanently bo
 ```bash
 uv run tradebot ingest prices
 uv run tradebot ingest insider
+uv run tradebot ingest corporate-actions
 uv run tradebot ingest all
 ```
 
 Commands print JSON and return `0` only when every requested ticker was checked successfully. Exit `2` means configuration or source coverage failed. Invalid or partial source results are not written.
 
-Price ingestion requires 64 completed NYSE daily sessions for every configured ticker. Each fetch is stored as an immutable per-ticker snapshot; `latest_prices` selects a complete latest snapshot rather than mixing Yahoo adjustment vintages.
+Price ingestion requires 64 completed NYSE daily sessions for every configured ticker. Each fetch is stored as an immutable per-ticker snapshot; `latest_prices` selects a complete latest snapshot rather than mixing Yahoo adjustment vintages. Yahoo dividends and split ratios are ingested independently with completed-session coverage and applied once to positions held before the action date.
 
 Insider ingestion scans the prior 90 calendar days using the SEC submissions index, its historical index files when relevant, and each filing's `primaryDocument`. A successful scan with zero code-P purchases is healthy. Malformed filings, unknown tickers, failed requests, and Form 4 amendments are reported as incomplete rather than treated as zero purchases. Accepted records retain the source URL and XML.
 

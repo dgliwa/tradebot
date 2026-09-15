@@ -1,12 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from datetime import UTC, date, datetime
 
 import duckdb
 
 from tradebot.config import Settings
 from tradebot.execution.paper import plan_intents, set_kill_switch
+from tradebot.ingestion import ingest_corporate_actions
 from tradebot.report.benchmark import sync_benchmark
 from tradebot.report.performance import PerformanceSnapshot, record_performance
 from tradebot.shadow.account import apply_weekly_contribution, create_account, load_account
@@ -40,6 +41,13 @@ def run_shadow_cycle(
     account = create_account(conn, strategy, name=account_name, created_at=decision_at)
     owned = {position.ticker for position in positions(conn, account.id)}
     daily = run_daily(conn, settings, strategy, decision_at=decision_at, owned_tickers=owned)
+    if owned:
+        action_ingestion = ingest_corporate_actions(
+            conn, settings, universe=sorted(owned), now=decision_at
+        )
+        if action_ingestion.errors:
+            raise ValueError("; ".join(action_ingestion.errors))
+        daily = replace(daily, ingestion=(*daily.ingestion, action_ingestion))
     contribution = apply_weekly_contribution(conn, account, strategy, daily.session, decision_at)
     benchmark_equity = sync_benchmark(conn, account, strategy.benchmark, daily.session)
     actions = apply_corporate_actions(conn, account, daily.session, decision_at)

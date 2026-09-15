@@ -6,7 +6,7 @@
 2. **Pluggable research strategies** — infrastructure depends on `TradingStrategy`; `PelosiStrategy` implements politician-led candidates, momentum, corporate-insider scoring, and entry triggers.
 3. **Political data boundary** — strict, atomic, idempotent manual CSV imports with explicit source-coverage dates and stocks/options direction handling.
 4. **Daily recommendations** — completed-NYSE-session evaluation, no look-ahead snapshots, required SPY coverage, explainable component scores, and replay-safe persistence.
-5. **Local shadow trading** — $10,000 allocation, $250 weekly contributions, 3% fractional positions, no margin/shorting, next-open slippage, stop/max-hold/negative-score exits, cooldowns, immutable fills, and split/dividend application for recorded actions.
+5. **Local shadow trading** — $10,000 allocation, $250 weekly contributions, 3% fractional positions, no margin/shorting, next-open slippage, stop/max-hold/negative-score exits, cooldowns, immutable fills, and automated Yahoo split/dividend ingestion and application.
 6. **Performance reports** — cash-flow-matched SPY ledger, time/money-weighted metrics, drawdown, P&L, turnover/exposure/win metrics, JSON/HTML artifacts, and exact stored report payloads.
 7. **Platform-neutral operation** — foreground one-shot/loop service, market-calendar scheduling, leases, retries/backoff, health/status, Docker packaging, and an operations runbook.
 8. **Guarded Alpaca paper path** — exact-quantity intents, explicit approve/reject, paper-endpoint lock, deterministic client IDs, stale/divergent-order rejection, reconciliation events, kill switch, and automation locked behind ten reconciled fills plus explicit enablement.
@@ -16,7 +16,6 @@
 
 - Obtain a fresh, complete politician-disclosure CSV and keep its coverage date current. Implement and validate the Quiver provider only after credentials and free-tier coverage are available.
 - Set a real contact `SEC_USER_AGENT`, then run disposable-database Yahoo and SEC smoke tests. CI intentionally uses mocks and makes no live data calls.
-- Add an automated corporate-action source. The ledger correctly applies recorded splits/dividends, but ingestion does not yet populate those records.
 - Obtain Alpaca paper API credentials and complete [`docs/alpaca-paper.md`](../alpaca-paper.md)'s sandbox checklist. No real broker call has been made.
 - Deploy the service on the chosen host, configure backups/clock monitoring, and observe daily reports.
 - Accumulate the required 12–26 weeks of frozen forward data and at least 8 weeks of reconciled Alpaca paper operation. These durations cannot be compressed by implementation work.

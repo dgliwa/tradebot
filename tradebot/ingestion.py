@@ -10,6 +10,7 @@ import duckdb
 
 from tradebot.config import Settings
 from tradebot.db.writer import WriteResult, write_raw_records
+from tradebot.fetchers.corporate_actions import fetch_corporate_actions, write_corporate_actions
 from tradebot.fetchers.insider import fetch_insider
 from tradebot.fetchers.political import ManualCSVProvider, import_political_batch
 from tradebot.fetchers.price import fetch_prices
@@ -90,6 +91,20 @@ def ingest_insider(
     written = write_raw_records(conn, "raw_insider", records)
     _record_coverage(conn, result)
     return _summary(result, written)
+
+
+def ingest_corporate_actions(
+    conn: duckdb.DuckDBPyConnection, settings: Settings, *,
+    universe: list[str] | None = None, now: datetime | None = None,
+) -> IngestionSummary:
+    tickers = settings.universe if universe is None else universe
+    actions, result = fetch_corporate_actions(tickers, **({"now": now} if now else {}))
+    if not result.is_valid:
+        _record_coverage(conn, result)
+        return _summary(result)
+    inserted, skipped = write_corporate_actions(conn, actions)
+    _record_coverage(conn, result)
+    return _summary(result, WriteResult(inserted, skipped))
 
 
 def ingest_political_csv(

@@ -28,7 +28,7 @@ class Portfolio:
 
 
 def _position_ledger(
-    conn: duckdb.DuckDBPyConnection, account_id: str,
+    conn: duckdb.DuckDBPyConnection, account_id: str, *, before: datetime | None = None,
 ) -> tuple[tuple[Position, ...], float]:
     fills = conn.execute(
         """SELECT f.ticker,f.side,f.quantity,f.price,f.filled_at,f.id
@@ -42,6 +42,8 @@ def _position_ledger(
     ).fetchall()
     events = [(row[4], row[5], "fill", row) for row in fills]
     events += [(datetime.combine(row[2], datetime.min.time(), tzinfo=UTC), row[3], "split", row) for row in splits]
+    if before is not None:
+        events = [event for event in events if event[0] < before]
     lots: dict[str, list[list]] = {}
     realized = 0.0
     for _, _, kind, row in sorted(events, key=lambda item: (item[0], item[1])):
@@ -77,6 +79,13 @@ def _position_ledger(
 
 def positions(conn: duckdb.DuckDBPyConnection, account_id: str) -> tuple[Position, ...]:
     return _position_ledger(conn, account_id)[0]
+
+
+def positions_before(
+    conn: duckdb.DuckDBPyConnection, account_id: str, day: date,
+) -> tuple[Position, ...]:
+    cutoff = datetime.combine(day, datetime.min.time(), tzinfo=UTC)
+    return _position_ledger(conn, account_id, before=cutoff)[0]
 
 
 def price_on(
