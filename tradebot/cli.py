@@ -29,7 +29,7 @@ from tradebot.strategy.query import recommendation_rows
 
 
 def parser() -> argparse.ArgumentParser:
-    root = argparse.ArgumentParser(prog="tradebot", description="Local TradeBot data pipeline (no order execution)")
+    root = argparse.ArgumentParser(prog="tradebot", description="Local research, shadow-trading, and guarded paper-execution pipeline")
     root.add_argument("--env-dir", type=Path, default=Path("."), help="directory containing .env.paper/.env.live")
     root.add_argument("--strategy", type=Path, default=Path("strategy.toml"), help="versioned strategy TOML file")
     commands = root.add_subparsers(dest="command", required=True)
