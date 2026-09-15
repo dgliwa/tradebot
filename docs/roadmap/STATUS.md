@@ -15,7 +15,7 @@
 ## Outstanding operational work
 
 - Obtain a fresh, complete politician-disclosure CSV and keep its coverage date current. Implement and validate the Quiver provider only after credentials and free-tier coverage are available.
-- Set a real contact `SEC_USER_AGENT`, then run disposable-database Yahoo and SEC smoke tests. CI intentionally uses mocks and makes no live data calls.
+- Set a real contact `SEC_USER_AGENT`, then run `tradebot smoke-data --ticker AAPL` from a networked operator host. The command performs no database writes; CI intentionally uses mocks. The implementation host could not reach Yahoo, so a successful live probe remains outstanding.
 - Obtain Alpaca paper API credentials and complete [`docs/alpaca-paper.md`](../alpaca-paper.md)'s sandbox checklist. No real broker call has been made.
 - Deploy the service on the chosen host, configure backups/clock monitoring, and observe daily reports.
 - Accumulate the required 12–26 weeks of frozen forward data and at least 8 weeks of reconciled Alpaca paper operation. These durations cannot be compressed by implementation work.

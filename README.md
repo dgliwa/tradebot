@@ -122,4 +122,4 @@ All tests are offline and use temporary/in-memory databases and mocked HTTP:
 uv run pytest -q -o addopts=''
 ```
 
-Real Yahoo and SEC compatibility still needs an operator smoke test because both external interfaces can change. Run it against a disposable paper database first; do not use `data/tradebot.duckdb` for development validation.
+Real Yahoo and SEC compatibility still needs an operator smoke test because both external interfaces can change. `uv run tradebot smoke-data --ticker AAPL` probes all three feeds without opening a database; see [`docs/live-data-smoke.md`](docs/live-data-smoke.md).

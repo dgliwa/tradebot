@@ -18,7 +18,10 @@ from tradebot.execution.paper import (
     approve_intent, enable_automatic_submission, ensure_paper_state, pending_intents,
     reconcile_orders, reject_intent, set_kill_switch,
 )
-from tradebot.ingestion import ingest_corporate_actions, ingest_insider, ingest_political_csv, ingest_prices
+from tradebot.ingestion import (
+    ingest_corporate_actions, ingest_insider, ingest_political_csv, ingest_prices,
+    smoke_live_sources,
+)
 from tradebot.report import generate_report
 from tradebot.service import run_loop, run_once, service_status
 from tradebot.shadow.account import create_account, load_account
@@ -34,6 +37,8 @@ def parser() -> argparse.ArgumentParser:
     root.add_argument("--strategy", type=Path, default=Path("strategy.toml"), help="versioned strategy TOML file")
     commands = root.add_subparsers(dest="command", required=True)
     commands.add_parser("init-db", help="initialize or upgrade the selected database")
+    smoke = commands.add_parser("smoke-data", help="probe live data sources without writing the database")
+    smoke.add_argument("--ticker", default="AAPL")
     strategy = commands.add_parser("strategy", help="inspect the effective strategy contract")
     strategy.add_argument("action", choices=("show",))
     daily = commands.add_parser("run-daily", help="ingest and calculate a completed session")
@@ -79,6 +84,10 @@ def run(argv: list[str] | None = None) -> int:
             print(json.dumps({"config": json.loads(strategy.canonical_json), "config_hash": strategy.config_hash}, sort_keys=True))
             return 0
         settings = load_settings(env_dir=args.env_dir)
+        if args.command == "smoke-data":
+            summaries = smoke_live_sources(settings, args.ticker)
+            print(json.dumps([asdict(summary) for summary in summaries], sort_keys=True))
+            return 0 if all(summary.succeeded for summary in summaries) else 2
         with open_database(settings.db_path) as conn:
             init_db(conn)
             bind_mode(conn, settings.mode)

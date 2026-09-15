@@ -5,6 +5,7 @@ import duckdb
 import pytest
 
 from tradebot.cli import run
+from tradebot.ingestion import IngestionSummary
 from tradebot.models.raw_record import FetchResult, RawRecord, TickerFetchResult
 
 NOW = datetime(2026, 7, 8, 22, tzinfo=UTC)
@@ -37,6 +38,21 @@ def test_strategy_show_does_not_require_environment(capsys):
     payload = json.loads(capsys.readouterr().out)
     assert payload["config"]["version"] == "0.1.0"
     assert len(payload["config_hash"]) == 64
+
+
+def test_live_data_smoke_does_not_create_database(clean_env, monkeypatch, capsys):
+    env_dir, db_path = clean_env
+    summaries = (
+        IngestionSummary("yfinance", 64, 0, 0, "2026-07-08"),
+        IngestionSummary("yfinance-actions", 0, 0, 0, "2026-07-08"),
+        IngestionSummary("edgar", 0, 0, 0, "2026-07-08"),
+    )
+    monkeypatch.setattr("tradebot.cli.smoke_live_sources", lambda settings, ticker: summaries)
+    assert run(["--env-dir", str(env_dir), "smoke-data", "--ticker", "aapl"]) == 0
+    assert [item["source"] for item in json.loads(capsys.readouterr().out)] == [
+        "yfinance", "yfinance-actions", "edgar",
+    ]
+    assert not db_path.exists()
 
 
 def test_init_db_cli_is_idempotent(clean_env, capsys):

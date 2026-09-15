@@ -8,7 +8,7 @@ from pathlib import Path
 
 import duckdb
 
-from tradebot.config import Settings
+from tradebot.config import Settings, normalize_universe
 from tradebot.db.writer import WriteResult, write_raw_records
 from tradebot.fetchers.corporate_actions import fetch_corporate_actions, write_corporate_actions
 from tradebot.fetchers.insider import fetch_insider
@@ -61,6 +61,17 @@ def _record_coverage(conn: duckdb.DuckDBPyConnection, result: FetchResult) -> No
             [identifier, result.source, ticker.ticker, ticker.freshness_date, result.checked_at,
              "valid" if ticker.is_valid and not result.errors else "invalid", json.dumps(errors)],
         )
+
+
+def smoke_live_sources(
+    settings: Settings, ticker: str, *, now: datetime | None = None,
+) -> tuple[IngestionSummary, ...]:
+    ticker = normalize_universe([ticker])[0]
+    arguments = {"now": now} if now else {}
+    _, prices = fetch_prices([ticker], **arguments)
+    _, actions = fetch_corporate_actions([ticker], **arguments)
+    _, insider = fetch_insider([ticker], user_agent=settings.sec_user_agent, **arguments)
+    return _summary(prices), _summary(actions), _summary(insider)
 
 
 def ingest_prices(
